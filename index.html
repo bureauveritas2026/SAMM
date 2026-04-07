@@ -210,7 +210,6 @@ tr:last-child td{border-bottom:none;}
 .sched-matrix td input:focus,.sched-matrix td select:focus{border-color:var(--accent1);}
 .no-sched-note{background:rgba(255,82,99,.06);border:1px solid rgba(255,82,99,.2);border-radius:8px;padding:8px 14px;font-size:10px;color:var(--accent2);margin:8px 20px;text-align:center;}
 .night-note{background:rgba(176,110,255,.06);border:1px solid rgba(176,110,255,.2);border-radius:8px;padding:8px 14px;font-size:10px;color:var(--accent5);margin:8px 20px;text-align:center;}
-/* Info box para columnas detectadas */
 .col-info{background:rgba(77,184,255,.08);border:1px solid rgba(77,184,255,.2);border-radius:8px;padding:10px 14px;font-size:10px;color:var(--accent4);margin-top:8px;line-height:1.8;}
 @media(max-width:900px){
   main,.nav{padding-left:16px;padding-right:16px;}
@@ -433,11 +432,14 @@ tr:last-child td{border-bottom:none;}
         <button class="btn btn-secondary btn-sm" onclick="addScheduleRow()">+ Agregar fila</button>
         <button class="btn btn-primary btn-sm" id="btn-save-sched" onclick="saveScheduleTable()">💾 Guardar horarios</button>
       </div>
+      <!-- ══════════════════════════════════════════════════════
+           DESCRIPCIÓN DE TURNOS — ACTUALIZADA CON 4 TURNOS
+           ══════════════════════════════════════════════════════ -->
       <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.7">
         Turnos: <code style="color:var(--accent5)">22:00 – 07:00</code> (nocturno) &nbsp;·&nbsp;
         <code style="color:var(--accent4)">13:00 – 22:00</code> (tarde) &nbsp;·&nbsp;
         <code style="color:var(--accent1)">09:00 – 18:00</code> (intermedio) &nbsp;·&nbsp;
-        <code style="color:var(--accent2)">07:00 – 16:00</code> (mañana) &nbsp;·&nbsp;
+        <code style="color:var(--green)">07:00 – 16:00</code> (mañana) &nbsp;·&nbsp;
         <code style="color:var(--muted)">DESCANSO</code>
       </div>
       <div class="sched-matrix">
@@ -528,6 +530,24 @@ const COMP = {};
 let adminUnlocked = false;
 let _processedOTs = null;
 
+// ══════════════════════════════════════════════════════════════
+// TURNOS PRESET — ACTUALIZADO: 4 turnos de trabajo + DESCANSO
+// Mañana    : 07:00 – 16:00  (nuevo)
+// Intermedio: 09:00 – 18:00  (antes llamado "Mañana")
+// Tarde     : 13:00 – 22:00
+// Nocturno  : 22:00 – 07:00
+// Descanso  : DESCANSO
+// ══════════════════════════════════════════════════════════════
+const SHIFT_PRESETS = [
+  {label:'Mañana 07–16',      value:'07:00 – 16:00'},
+  {label:'Intermedio 09–18',  value:'09:00 – 18:00'},
+  {label:'Tarde 13–22',       value:'13:00 – 22:00'},
+  {label:'Noche 22–07',       value:'22:00 – 07:00'},
+  {label:'Descanso',          value:'DESCANSO'},
+];
+
+const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
 // ── INIT ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   if (!API_URL || API_URL.includes('TU_URL_AQUI')) {
@@ -542,20 +562,12 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshAll();
 });
 
-// ═══════════════════════════════════════════════════════
-// API — CORRECCIÓN PRINCIPAL: Apps Script no acepta
-// Content-Type:application/json en POST desde browser.
-// Usamos GET con parámetros para lecturas y para
-// operaciones de escritura enviamos via fetch como
-// text/plain (Apps Script lee e.postData.contents igual)
-// ═══════════════════════════════════════════════════════
-
+// ─── API ─────────────────────────────────────────────
 async function apiGet(params) {
   const url = API_URL + '?' + new URLSearchParams(params);
   const r = await fetch(url, { redirect: 'follow' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const text = await r.text();
-  // Apps Script a veces devuelve con JSONP prefix; limpiarlo
   const clean = text.replace(/^\/\*-secure-\n?\r?\s*/, '').replace(/\s*\*\/$/, '');
   return JSON.parse(clean);
 }
@@ -563,7 +575,6 @@ async function apiGet(params) {
 async function apiPost(body) {
   const pw = sessionStorage.getItem(ADMIN_PW_KEY) || '';
   const payload = JSON.stringify({ ...body, password: pw });
-  // Apps Script acepta POST con content-type text/plain correctamente
   const r = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -624,11 +635,7 @@ function switchTab(idx) {
   if (idx===5) renderPrintPreview();
 }
 
-// ═══════════════════════════════════════════════════════
-// ADMIN AUTH — CORRECCIÓN PRINCIPAL
-// verifyAdmin ahora usa apiPost con text/plain,
-// y maneja correctamente la respuesta async
-// ═══════════════════════════════════════════════════════
+// ── ADMIN AUTH ────────────────────────────────────────
 function openAdmin() {
   if (adminUnlocked) {
     showAdminPanel();
@@ -661,7 +668,6 @@ async function verifyAdmin() {
   loadEl.style.display = 'block';
   btnEl.disabled = true;
   try {
-    // Guardamos la contraseña temporalmente para el envío
     sessionStorage.setItem(ADMIN_PW_KEY, pw);
     const res = await apiPost({ action:'verifyAdmin', password: pw });
     loadEl.style.display = 'none';
@@ -786,15 +792,10 @@ function populateSchUserSel() {
     .forEach(u => sel.innerHTML += `<option value="${u.codigo}">${u.codigo} — ${u.nombre||''}</option>`);
   if (cur) sel.value = cur;
 }
-const SHIFT_PRESETS = [
-  {label:'Mañana 07–16',value:'07:00 – 16:00'},
-  {label:'Intermedio 09–18',value:'09:00 – 18:00'},
-  {label:'Tarde 13–22', value:'13:00 – 22:00'},
-  {label:'Noche 22–07', value:'22:00 – 07:00'},
-  {label:'Descanso',    value:'DESCANSO'},
-];
-const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
+// ══════════════════════════════════════════════════════════════
+// loadScheduleTable — usa SHIFT_PRESETS actualizado con 4 turnos
+// ══════════════════════════════════════════════════════════════
 function loadScheduleTable() {
   const code  = document.getElementById('sch-user-sel').value;
   const month = document.getElementById('sch-month-sel').value;
@@ -812,8 +813,10 @@ function loadScheduleTable() {
     const selOpts = SHIFT_PRESETS.map(p =>
       `<option value="${p.value}"${existing?.horario===p.value?' selected':''}>${p.label}</option>`
     ).join('');
+    // ── Color según turno ────────────────────────────
     let shiftColor='var(--muted)';
-    if(existing?.horario==='09:00 – 18:00') shiftColor='var(--accent1)';
+    if(existing?.horario==='07:00 – 16:00') shiftColor='var(--green)';
+    else if(existing?.horario==='09:00 – 18:00') shiftColor='var(--accent1)';
     else if(existing?.horario==='13:00 – 22:00') shiftColor='var(--accent4)';
     else if(existing?.horario==='22:00 – 07:00') shiftColor='var(--accent5)';
     else if(existing?.horario==='DESCANSO') shiftColor='var(--accent3)';
@@ -826,15 +829,19 @@ function loadScheduleTable() {
     tbody.appendChild(tr);
   }
 }
+
+// ── updateSchedColor — colores para 4 turnos ─────────
 function updateSchedColor(sel){
   const val=sel.value;
   let c='var(--muted)';
-  if(val==='09:00 – 18:00') c='var(--accent1)';
+  if(val==='07:00 – 16:00') c='var(--green)';
+  else if(val==='09:00 – 18:00') c='var(--accent1)';
   else if(val==='13:00 – 22:00') c='var(--accent4)';
   else if(val==='22:00 – 07:00') c='var(--accent5)';
   else if(val==='DESCANSO') c='var(--accent3)';
   sel.style.color=c;
 }
+
 function addScheduleRow(){
   const tbody=document.getElementById('sched-tbody');
   const tr=document.createElement('tr');
@@ -846,6 +853,7 @@ function addScheduleRow(){
     <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>`;
   tbody.appendChild(tr);
 }
+
 async function saveScheduleTable(){
   const code=document.getElementById('sch-user-sel').value;
   if(!code){alert('Selecciona un técnico');return;}
@@ -874,15 +882,10 @@ async function saveScheduleTable(){
   await refreshAll();
 }
 
-// ═══════════════════════════════════════════════════════
-// OT FILE PROCESSING — CORRECCIÓN PRINCIPAL
-// Ahora detecta automáticamente las columnas y
-// muestra info detallada de lo que encontró
-// ═══════════════════════════════════════════════════════
+// ── OT FILE PROCESSING ────────────────────────────────
 function handleOTFile(event) {
   const file = event.target.files[0];
   if (!file) return;
-  // Limpiar log anterior
   const logEl = document.getElementById('ot-log');
   const infoEl= document.getElementById('ot-col-info');
   logEl.innerHTML=''; logEl.style.display='none';
@@ -898,16 +901,13 @@ function handleOTFile(event) {
       const shName = wb.SheetNames[0];
       otLog('info', `📄 Hoja activa: "${shName}"`);
       const ws = wb.Sheets[shName];
-      // Leer como array de arrays (sin headers automáticos)
       const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
       if (!raw.length) { otLog('err','✗ El archivo está vacío'); return; }
 
-      // Detectar si la primera fila es header o datos
       const firstRow = raw[0];
       const numCols  = firstRow.length;
       otLog('ok', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
 
-      // Mostrar info de columnas clave
       const colInfo = [];
       if (numCols >= 1)  colInfo.push(`Col.1 (Usuario): "${String(firstRow[0]||'').substring(0,30)}"`);
       if (numCols >= 28) colInfo.push(`Col.28 (OT parte 1): "${String(firstRow[27]||'').substring(0,30)}"`);
@@ -918,60 +918,46 @@ function handleOTFile(event) {
       infoEl.innerHTML = '<b>Columnas detectadas (fila 1):</b><br>' + colInfo.join('<br>');
       infoEl.style.display = 'block';
 
-      // Determinar si hay fila de encabezado
-      // Si col[0] de la primera fila no parece un código de usuario, es header
       const isHeader = /^(usuario|user|codigo|tecnico|empleado|col|#)/i.test(String(firstRow[0]||'').trim()) ||
                        (firstRow[0]==='' && firstRow.some(v=>v!==''));
       const dataRows = isHeader ? raw.slice(1) : raw;
       otLog('info', `${isHeader?'⚙ Fila de encabezado detectada y omitida':'⚙ Sin fila de encabezado, procesando desde fila 1'}`);
 
-      // Filtrar filas vacías
       const validRows = dataRows.filter(row => row.some(v => String(v).trim()!==''));
       otLog('ok', `✓ ${validRows.length} filas de datos válidas`);
 
       if (!validRows.length) { otLog('err','✗ No se encontraron filas de datos válidas'); return; }
 
-      // Procesar OTs
       const byUser = {};
-      const errors = [];
       _processedOTs = [];
 
       validRows.forEach((row, idx) => {
-        // Col 1 (índice 0) = código usuario
         const codUser = String(row[0]||'').trim().toUpperCase();
-        if (!codUser) return; // filas sin usuario las omitimos
+        if (!codUser) return;
 
-        // Col 28-29 (índices 27-28) = código OT
         const ot1 = String(row[27]||'').trim();
         const ot2 = String(row[28]||'').trim();
         const codigoOT = [ot1,ot2].filter(Boolean).join(' - ') || `OT-${idx+1}`;
 
-        // Col 86 (índice 85) = Ubicación/Sucursal
-        // Con fallback a col 85 y 84 si no existe
         let ubicacion = '';
         if (numCols >= 86) ubicacion = String(row[85]||'').trim();
         if (!ubicacion && numCols >= 85) ubicacion = String(row[84]||'').trim();
 
-        // Col 81 (índice 80) = Equipo
         let equipo = '';
         if (numCols >= 81) equipo = String(row[80]||'').trim();
         if (!equipo && numCols >= 80) equipo = String(row[79]||'').trim();
 
-        // Duración: col 7 (índice 6), puede estar en horas decimales
-        let durMin = 60; // default 1 hora
+        let durMin = 60;
         const durRaw = row[6];
         if (durRaw !== undefined && durRaw !== null && durRaw !== '') {
           const parsed = parseFloat(String(durRaw).replace(',','.'));
           if (!isNaN(parsed) && parsed > 0) {
-            // Si el valor es menor que 24, asumimos horas; si es mayor, asumimos minutos
             durMin = parsed <= 24 ? Math.round(parsed * 60) : Math.round(parsed);
           }
         }
-        durMin = Math.max(15, Math.min(durMin, 480)); // entre 15min y 8h
+        durMin = Math.max(15, Math.min(durMin, 480));
 
-        // Col 10 (índice 9) = Catálogo/Descripción
         const catalogo = String(row[9]||row[10]||'').trim();
-        // Col 12 (índice 11) = Contrato
         const contrato = String(row[11]||row[12]||'').trim();
 
         _processedOTs.push({
@@ -987,12 +973,10 @@ function handleOTFile(event) {
         byUser[codUser] = (byUser[codUser]||0)+1;
       });
 
-      // Resumen por usuario
       const userList = Object.entries(byUser).sort((a,b)=>b[1]-a[1]);
       userList.forEach(([u,c]) => otLog('ok', `  → ${u}: ${c} OT${c!==1?'s':''}`));
       otLog('ok', `📊 Total procesadas: ${_processedOTs.length} OTs · ${userList.length} técnico(s)`);
 
-      // Advertencias
       if (numCols < 86) otLog('warn', `⚠ Archivo tiene ${numCols} columnas. Columna 86 (ubicación) no disponible.`);
       if (numCols < 81) otLog('warn', `⚠ Columna 81 (equipo) no disponible.`);
       if (_processedOTs.length === 0) {
