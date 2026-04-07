@@ -831,37 +831,111 @@ function loadScheduleTable() {
   const code  = document.getElementById('sch-user-sel').value;
   const month = document.getElementById('sch-month-sel').value;
   const tbody = document.getElementById('sched-tbody');
+  const sumEl = document.getElementById('sched-summary');
   tbody.innerHTML = '';
+  if (sumEl) sumEl.innerHTML = '';
   if (!code || !month) return;
   const [yr,mo] = month.split('-').map(Number);
   const days = new Date(yr, mo, 0).getDate();
+  let cntWork=0, cntRest=0, cntEmpty=0;
+
   for (let d=1; d<=days; d++) {
     const dt = new Date(yr, mo-1, d);
     const dk = dkStr(dt);
-    const existing = DB.schedules.find(s=>s.codigo===code&&s.fecha===dk);
-    const dayName  = DAYS_ES[dt.getDay()];
+    const existing  = DB.schedules.find(s=>s.codigo===code&&s.fecha===dk);
+    const dayName   = DAYS_ES[dt.getDay()];
+    const isWeekend = dt.getDay()===0 || dt.getDay()===6;
     const tr = document.createElement('tr');
+
+    // color y chip según turno
+    let dotColor='var(--muted)', chipStyle='', chipLabel='Sin asignar';
+    if (existing?.horario === '07:00 – 16:00')  { dotColor='var(--green)';    chipStyle=`background:rgba(46,255,170,.12);color:var(--green);border:1px solid rgba(46,255,170,.25)`;   chipLabel='Mañana 07–16'; }
+    else if (existing?.horario === '09:00 – 18:00') { dotColor='var(--accent1)'; chipStyle=`background:rgba(0,229,184,.12);color:var(--accent1);border:1px solid rgba(0,229,184,.25)`; chipLabel='Intermedio 09–18'; }
+    else if (existing?.horario === '13:00 – 22:00') { dotColor='var(--accent4)'; chipStyle=`background:rgba(77,184,255,.12);color:var(--accent4);border:1px solid rgba(77,184,255,.25)`;chipLabel='Tarde 13–22'; }
+    else if (existing?.horario === '22:00 – 07:00') { dotColor='var(--accent5)'; chipStyle=`background:rgba(176,110,255,.12);color:var(--accent5);border:1px solid rgba(176,110,255,.25)`;chipLabel='Noche 22–07'; }
+    else if (existing?.horario === 'DESCANSO')       { dotColor='var(--accent3)'; chipStyle=`background:rgba(255,184,48,.12);color:var(--accent3);border:1px solid rgba(255,184,48,.25)`;  chipLabel='Descanso'; }
+
+    if (existing?.horario === 'DESCANSO') cntRest++;
+    else if (existing?.horario) cntWork++;
+    else cntEmpty++;
+
     const selOpts = SHIFT_PRESETS.map(p =>
       `<option value="${p.value}"${existing?.horario===p.value?' selected':''}>${p.label}</option>`
     ).join('');
-    // ── Color según turno ────────────────────────────
-    let shiftColor='var(--muted)';
-    if(existing?.horario==='07:00 – 16:00') shiftColor='var(--green)';
-    else if(existing?.horario==='09:00 – 18:00') shiftColor='var(--accent1)';
-    else if(existing?.horario==='13:00 – 22:00') shiftColor='var(--accent4)';
-    else if(existing?.horario==='22:00 – 07:00') shiftColor='var(--accent5)';
-    else if(existing?.horario==='DESCANSO') shiftColor='var(--accent3)';
-    tr.innerHTML=`
-      <td style="color:var(--muted);font-size:10px">${dk}</td>
-      <td style="color:${shiftColor};font-size:10px">${dayName}</td>
-      <td><select data-dk="${dk}" data-day="${dayName}" class="sched-sel" onchange="updateSchedColor(this)" style="border-color:${existing?'var(--border2)':'var(--border)'}">
-        <option value="">— Sin registro —</option>${selOpts}</select></td>
-      <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>`;
+
+    const horarioDisplay = existing?.horario
+      ? `<span style="display:inline-flex;align-items:center;gap:6px">
+           <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0"></span>
+           <span style="font-size:10px;font-weight:600;color:${dotColor}">${existing.horario}</span>
+         </span>`
+      : `<span style="font-size:10px;color:var(--muted)">—</span>`;
+
+    tr.innerHTML = `
+      <td style="font-size:10px;color:${isWeekend?'var(--accent2)':'var(--muted)'};
+                 font-weight:${isWeekend?'700':'400'}">${dk}</td>
+      <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;
+                       background:${isWeekend?'rgba(255,82,99,.1)':'transparent'};
+                       color:${isWeekend?'var(--accent2)':'var(--muted)'}">${dayName}</span></td>
+      <td>${horarioDisplay}</td>
+      <td>
+        <select data-dk="${dk}" data-day="${dayName}" class="sched-sel"
+                onchange="updateSchedColor(this)"
+                style="border-color:${existing?.horario?'var(--border2)':'var(--border)'};
+                       color:${dotColor}">
+          <option value="">— Sin registro —</option>${selOpts}
+        </select>
+      </td>
+      <td>
+        <span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:9px;
+                     font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+                     ${existing?.horario ? chipStyle : 'background:rgba(74,98,120,.12);color:var(--muted);border:1px solid rgba(74,98,120,.2)'}">
+          ${existing?.horario ? chipLabel : 'Sin asignar'}
+        </span>
+      </td>
+      <td>
+        <button class="btn btn-xs btn-danger"
+                onclick="this.closest('tr').remove();updateSchedSummary()">✕</button>
+      </td>`;
     tbody.appendChild(tr);
+  }
+
+  // resumen al pie
+  if (sumEl) {
+    sumEl.innerHTML = `
+      <span>🗓 Total: <b style="color:var(--text)">${days}</b> días</span>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--accent1)"></span>
+        Trabajo: <b style="color:var(--accent1)">${cntWork}</b>
+      </span>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--accent3)"></span>
+        Descanso: <b style="color:var(--accent3)">${cntRest}</b>
+      </span>
+      <span style="display:flex;align-items:center;gap:5px">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--muted)"></span>
+        Sin asignar: <b style="color:var(--muted)">${cntEmpty}</b>
+      </span>`;
   }
 }
 
-// ── updateSchedColor — colores para 4 turnos ─────────
+function updateSchedSummary() {
+  const rows = document.querySelectorAll('#sched-tbody tr');
+  let w=0,r=0,e=0;
+  rows.forEach(tr => {
+    const sel = tr.querySelector('.sched-sel');
+    if (!sel) return;
+    if (sel.value === 'DESCANSO') r++;
+    else if (sel.value) w++;
+    else e++;
+  });
+  const sumEl = document.getElementById('sched-summary');
+  if (sumEl) sumEl.innerHTML = `
+    <span>🗓 Filas: <b style="color:var(--text)">${rows.length}</b></span>
+    <span>Trabajo: <b style="color:var(--accent1)">${w}</b></span>
+    <span>Descanso: <b style="color:var(--accent3)">${r}</b></span>
+    <span>Sin asignar: <b style="color:var(--muted)">${e}</b></span>`;
+}
+  // ── updateSchedColor — colores para 4 turnos ─────────
 function updateSchedColor(sel){
   const val=sel.value;
   let c='var(--muted)';
@@ -898,7 +972,9 @@ async function saveScheduleTable(){
     const inputs=tr.querySelectorAll('input');
     const day=dateEl?(inputs[1]?.value||DAYS_ES[new Date(dk+'T00:00:00').getDay()]):sel.dataset.day;
     if(!dk) return;
-    records.push({codigo:code,fecha:dk,dia:day,horario:sel.value});
+    const shiftPreset = SHIFT_PRESETS.find(p => p.value === sel.value);
+      const turnoNombre = shiftPreset ? shiftPreset.label : sel.value;
+      records.push({codigo:code, fecha:dk, dia:day, horario:sel.value, turno_nombre:turnoNombre});
   });
   if(!records.length){alert('No hay registros para guardar');return;}
   const btn=document.getElementById('btn-save-sched');
