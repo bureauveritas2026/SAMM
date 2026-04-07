@@ -436,7 +436,8 @@ tr:last-child td{border-bottom:none;}
       <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.7">
         Turnos: <code style="color:var(--accent5)">22:00 – 07:00</code> (nocturno) &nbsp;·&nbsp;
         <code style="color:var(--accent4)">13:00 – 22:00</code> (tarde) &nbsp;·&nbsp;
-        <code style="color:var(--accent1)">09:00 – 18:00</code> (mañana) &nbsp;·&nbsp;
+        <code style="color:var(--accent1)">09:00 – 18:00</code> (intermedio) &nbsp;·&nbsp;
+        <code style="color:var(--accent2)">07:00 – 16:00</code> (mañana) &nbsp;·&nbsp;
         <code style="color:var(--muted)">DESCANSO</code>
       </div>
       <div class="sched-matrix">
@@ -786,7 +787,8 @@ function populateSchUserSel() {
   if (cur) sel.value = cur;
 }
 const SHIFT_PRESETS = [
-  {label:'Mañana 09–18',value:'09:00 – 18:00'},
+  {label:'Mañana 07–16',value:'07:00 – 16:00'},
+  {label:'Intermedio 09–18',value:'09:00 – 18:00'},
   {label:'Tarde 13–22', value:'13:00 – 22:00'},
   {label:'Noche 22–07', value:'22:00 – 07:00'},
   {label:'Descanso',    value:'DESCANSO'},
