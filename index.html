@@ -204,6 +204,99 @@ tr:last-child td{border-bottom:none;}
 .color-dot{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
 .color-dot:hover{transform:scale(1.2);}
 .color-dot.selected{border-color:#fff;}
+
+/* ══════════════════════════════════════════════
+   NUEVO: Schedule Matrix — Diseño mejorado
+   ══════════════════════════════════════════════ */
+.sch-panel{display:flex;flex-direction:column;gap:0;}
+
+/* Cabecera con selector de usuario y mes */
+.sch-controls{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:12px 12px 0 0;padding:16px 20px;
+  border-bottom:1px solid var(--border);}
+
+/* Leyenda de turnos */
+.sch-legend{display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px;
+  background:rgba(0,0,0,.2);border-left:1px solid var(--border);
+  border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.sch-legend-item{display:flex;align-items:center;gap:6px;font-size:9px;
+  color:var(--muted);letter-spacing:.5px;}
+.sch-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* Grid de días */
+.sch-grid{border:1px solid var(--border);border-top:none;
+  border-radius:0 0 12px 12px;overflow:hidden;}
+
+.sch-week-header{display:grid;grid-template-columns:90px 110px 1fr 36px;
+  gap:0;background:var(--surface2);border-bottom:1px solid var(--border);}
+.sch-week-header span{padding:8px 14px;font-family:var(--font-head);font-size:8px;
+  font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+
+.sch-day-row{display:grid;grid-template-columns:90px 110px 1fr 36px;
+  gap:0;border-bottom:1px solid rgba(30,45,66,.5);
+  transition:background .15s;position:relative;}
+.sch-day-row:last-child{border-bottom:none;}
+.sch-day-row:hover{background:var(--surface2);}
+
+/* Fin de semana con fondo leve */
+.sch-day-row.weekend{background:rgba(176,110,255,.03);}
+.sch-day-row.weekend:hover{background:rgba(176,110,255,.06);}
+
+/* Día festivo/descanso */
+.sch-day-row.is-rest{background:rgba(255,184,48,.03);}
+.sch-day-row.is-rest:hover{background:rgba(255,184,48,.06);}
+
+.sch-cell{padding:9px 14px;font-size:11px;display:flex;align-items:center;
+  border-right:1px solid rgba(30,45,66,.4);}
+.sch-cell:last-child{border-right:none;justify-content:center;padding:6px;}
+
+/* Columna fecha */
+.sch-cell-date{font-family:var(--font-head);font-weight:700;font-size:12px;
+  color:var(--text);}
+.sch-cell-date small{display:block;font-family:var(--font-mono);font-weight:400;
+  font-size:9px;color:var(--muted);margin-top:1px;}
+
+/* Columna día nombre */
+.sch-cell-day{font-size:10px;}
+
+/* Columna turno — el select */
+.sch-cell-shift{padding:6px 10px;}
+.sch-cell-shift select{
+  width:100%;background:var(--surface3);border:1px solid var(--border2);
+  color:var(--text);padding:7px 12px;border-radius:8px;
+  font-family:var(--font-mono);font-size:11px;outline:none;
+  transition:border-color .2s,background .2s,color .2s;
+  cursor:pointer;
+}
+.sch-cell-shift select:focus{border-color:var(--accent1);background:var(--surface3);}
+.sch-cell-shift select:hover{border-color:var(--border2);}
+
+/* Pill de turno actual (lectura rápida) */
+.shift-pill{display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:20px;font-size:9px;letter-spacing:.3px;
+  font-family:var(--font-head);font-weight:700;pointer-events:none;
+  white-space:nowrap;}
+
+/* Botón eliminar fila */
+.sch-cell-del button{
+  width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;
+  background:rgba(255,82,99,.1);color:var(--accent2);font-size:13px;
+  transition:background .15s;display:flex;align-items:center;justify-content:center;
+}
+.sch-cell-del button:hover{background:rgba(255,82,99,.25);}
+
+/* Contador resumen arriba */
+.sch-summary{display:flex;gap:12px;flex-wrap:wrap;padding:10px 20px;
+  background:rgba(0,229,184,.04);border:1px solid var(--border);
+  border-top:none;border-left:1px solid var(--border);
+  border-right:1px solid var(--border);}
+.sch-sum-item{display:flex;align-items:center;gap:6px;font-size:10px;}
+.sch-sum-dot{width:7px;height:7px;border-radius:50%;}
+.sch-sum-val{font-family:var(--font-head);font-weight:700;font-size:12px;}
+
+/* ── fin diseño horarios ── */
+
 .sched-matrix{overflow-x:auto;margin-top:12px;}
 .sched-matrix table{min-width:700px;}
 .sched-matrix td input,.sched-matrix td select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-family:var(--font-mono);font-size:10px;width:100%;outline:none;}
@@ -217,6 +310,7 @@ tr:last-child td{border-bottom:none;}
   .stats-bar{grid-template-columns:repeat(2,1fr);}
   .ugrid{grid-template-columns:1fr;}
   .form-row.cols-2,.form-row.cols-3,.form-row.cols-4{grid-template-columns:1fr;}
+  .sch-week-header,.sch-day-row{grid-template-columns:70px 90px 1fr 32px;}
 }
 @media print{
   body{background:#fff!important;color:#111!important;}
@@ -398,7 +492,7 @@ tr:last-child td{border-bottom:none;}
 
 <!-- ADMIN MODAL -->
 <div class="modal-overlay" id="admin-modal">
-  <div class="modal" style="max-width:700px;width:95vw">
+  <div class="modal" style="max-width:780px;width:97vw">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <h2 style="flex:1">⚙ Panel de Administración</h2>
       <button class="btn btn-sm" style="background:var(--surface2);color:var(--muted)" onclick="closeAdmin()">✕ Cerrar</button>
@@ -407,6 +501,8 @@ tr:last-child td{border-bottom:none;}
       <button class="nav-btn active" id="adm-tab-0" onclick="switchAdminTab(0)" style="font-size:10px;padding:6px 14px">👤 Usuarios</button>
       <button class="nav-btn" id="adm-tab-1" onclick="switchAdminTab(1)" style="font-size:10px;padding:6px 14px">🗓 Horarios</button>
     </div>
+
+    <!-- USUARIOS -->
     <div id="adm-p0">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div style="font-size:11px;color:var(--muted)">Usuarios registrados en el sistema</div>
@@ -419,36 +515,74 @@ tr:last-child td{border-bottom:none;}
         </table>
       </div>
     </div>
+
+    <!-- ══════════════════════════════════════
+         HORARIOS — Panel rediseñado
+         ══════════════════════════════════════ -->
     <div id="adm-p1" style="display:none">
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
-        <div class="fgroup" style="flex:1;max-width:200px">
-          <label>Técnico</label>
-          <select id="sch-user-sel" onchange="loadScheduleTable()"><option value="">— Seleccionar —</option></select>
+
+      <!-- Controles superiores -->
+      <div class="sch-panel">
+        <div class="sch-controls">
+          <div class="fgroup" style="flex:1;max-width:240px">
+            <label>Técnico</label>
+            <select id="sch-user-sel" onchange="loadScheduleTable()">
+              <option value="">— Seleccionar técnico —</option>
+            </select>
+          </div>
+          <div class="fgroup" style="max-width:160px">
+            <label>Mes / Año</label>
+            <input type="month" id="sch-month-sel" onchange="loadScheduleTable()">
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-left:auto">
+            <button class="btn btn-secondary btn-sm" onclick="addScheduleRow()">+ Agregar día</button>
+            <button class="btn btn-primary btn-sm" id="btn-save-sched" onclick="saveScheduleTable()">
+              💾 Guardar horarios
+            </button>
+          </div>
         </div>
-        <div class="fgroup" style="flex:1;max-width:160px">
-          <label>Mes / Año</label>
-          <input type="month" id="sch-month-sel" onchange="loadScheduleTable()">
+
+        <!-- Leyenda de turnos -->
+        <div class="sch-legend">
+          <span style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-right:4px">Turnos:</span>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:var(--green)"></div>Mañana 07–16</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:var(--accent1)"></div>Intermedio 09–18</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:var(--accent4)"></div>Tarde 13–22</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:var(--accent5)"></div>Noche 22–07</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:var(--accent3)"></div>Descanso</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:var(--muted)"></div>Sin registro</div>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="addScheduleRow()">+ Agregar fila</button>
-        <button class="btn btn-primary btn-sm" id="btn-save-sched" onclick="saveScheduleTable()">💾 Guardar horarios</button>
-      </div>
-      <!-- ══════════════════════════════════════════════════════
-           DESCRIPCIÓN DE TURNOS — ACTUALIZADA CON 4 TURNOS
-           ══════════════════════════════════════════════════════ -->
-      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-        Turnos: <code style="color:var(--accent5)">22:00 – 07:00</code> (nocturno) &nbsp;·&nbsp;
-        <code style="color:var(--accent4)">13:00 – 22:00</code> (tarde) &nbsp;·&nbsp;
-        <code style="color:var(--accent1)">09:00 – 18:00</code> (intermedio) &nbsp;·&nbsp;
-        <code style="color:var(--green)">07:00 – 16:00</code> (mañana) &nbsp;·&nbsp;
-        <code style="color:var(--muted)">DESCANSO</code>
-      </div>
-      <div class="sched-matrix">
-        <table>
-          <thead><tr><th>Fecha</th><th>Día</th><th>Turno</th><th></th></tr></thead>
-          <tbody id="sched-tbody"></tbody>
-        </table>
-      </div>
+
+        <!-- Resumen conteo -->
+        <div class="sch-summary" id="sch-summary" style="display:none">
+          <div class="sch-sum-item"><div class="sch-sum-dot" style="background:var(--green)"></div><span class="sch-sum-val" id="cnt-morning">0</span><span style="color:var(--muted);font-size:9px">Mañana</span></div>
+          <div class="sch-sum-item"><div class="sch-sum-dot" style="background:var(--accent1)"></div><span class="sch-sum-val" id="cnt-mid">0</span><span style="color:var(--muted);font-size:9px">Intermedio</span></div>
+          <div class="sch-sum-item"><div class="sch-sum-dot" style="background:var(--accent4)"></div><span class="sch-sum-val" id="cnt-afternoon">0</span><span style="color:var(--muted);font-size:9px">Tarde</span></div>
+          <div class="sch-sum-item"><div class="sch-sum-dot" style="background:var(--accent5)"></div><span class="sch-sum-val" id="cnt-night">0</span><span style="color:var(--muted);font-size:9px">Noche</span></div>
+          <div class="sch-sum-item"><div class="sch-sum-dot" style="background:var(--accent3)"></div><span class="sch-sum-val" id="cnt-rest">0</span><span style="color:var(--muted);font-size:9px">Descanso</span></div>
+        </div>
+
+        <!-- Cabecera columnas -->
+        <div class="sch-week-header sch-grid" style="border-radius:0;border-bottom:1px solid var(--border)">
+          <span>Fecha</span>
+          <span>Día</span>
+          <span>Turno</span>
+          <span></span>
+        </div>
+
+        <!-- Filas de días -->
+        <div class="sch-grid" id="sch-rows-container">
+          <div style="text-align:center;padding:40px;color:var(--muted);font-size:11px">
+            Selecciona un técnico y un mes para ver los horarios.
+          </div>
+        </div>
+      </div><!-- /sch-panel -->
+
+      <!-- Tabla oculta legacy (usada internamente por saveScheduleTable) -->
+      <table style="display:none"><tbody id="sched-tbody"></tbody></table>
     </div>
+    <!-- /adm-p1 -->
+
   </div>
 </div>
 
@@ -531,22 +665,23 @@ let adminUnlocked = false;
 let _processedOTs = null;
 
 // ══════════════════════════════════════════════════════════════
-// TURNOS PRESET — ACTUALIZADO: 4 turnos de trabajo + DESCANSO
-// Mañana    : 07:00 – 16:00  (nuevo)
-// Intermedio: 09:00 – 18:00  (antes llamado "Mañana")
-// Tarde     : 13:00 – 22:00
-// Nocturno  : 22:00 – 07:00
-// Descanso  : DESCANSO
+// TURNOS PRESET — 4 turnos + DESCANSO
 // ══════════════════════════════════════════════════════════════
 const SHIFT_PRESETS = [
-  {label:'Mañana 07–16',      value:'07:00 – 16:00'},
-  {label:'Intermedio 09–18',  value:'09:00 – 18:00'},
-  {label:'Tarde 13–22',       value:'13:00 – 22:00'},
-  {label:'Noche 22–07',       value:'22:00 – 07:00'},
-  {label:'Descanso',          value:'DESCANSO'},
+  {label:'Mañana 07–16',     value:'07:00 – 16:00', turno:'Mañana',      color:'var(--green)',   emoji:'🌅'},
+  {label:'Intermedio 09–18', value:'09:00 – 18:00', turno:'Intermedio',  color:'var(--accent1)', emoji:'☀️'},
+  {label:'Tarde 13–22',      value:'13:00 – 22:00', turno:'Tarde',       color:'var(--accent4)', emoji:'🌆'},
+  {label:'Noche 22–07',      value:'22:00 – 07:00', turno:'Nocturno',    color:'var(--accent5)', emoji:'🌙'},
+  {label:'Descanso',         value:'DESCANSO',       turno:'Descanso',    color:'var(--accent3)', emoji:'🛌'},
 ];
 
+// Helper: retorna el preset que coincide con el valor
+function getPreset(val) {
+  return SHIFT_PRESETS.find(p => p.value === val) || null;
+}
+
 const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const WEEKEND = new Set([0, 6]); // domingo=0, sábado=6
 
 // ── INIT ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -783,7 +918,9 @@ async function deleteUser(codigo) {
   } catch(e) { alert('Error de conexión: ' + e.message); }
 }
 
-// ── SCHEDULES ADMIN ───────────────────────────────────
+// ══════════════════════════════════════════════════════
+// SCHEDULES ADMIN — Panel rediseñado con nuevo layout
+// ══════════════════════════════════════════════════════
 function populateSchUserSel() {
   const sel = document.getElementById('sch-user-sel');
   const cur = sel.value;
@@ -793,93 +930,216 @@ function populateSchUserSel() {
   if (cur) sel.value = cur;
 }
 
-// ══════════════════════════════════════════════════════════════
-// loadScheduleTable — usa SHIFT_PRESETS actualizado con 4 turnos
-// ══════════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────
+// loadScheduleTable — renderiza el nuevo grid de días
+// FIX: ahora recupera turno_nombre del preset correcto
+// ─────────────────────────────────────────────────────
 function loadScheduleTable() {
   const code  = document.getElementById('sch-user-sel').value;
   const month = document.getElementById('sch-month-sel').value;
-  const tbody = document.getElementById('sched-tbody');
-  tbody.innerHTML = '';
-  if (!code || !month) return;
-  const [yr,mo] = month.split('-').map(Number);
+  const container = document.getElementById('sch-rows-container');
+  const summary   = document.getElementById('sch-summary');
+
+  container.innerHTML = '';
+  summary.style.display = 'none';
+
+  if (!code || !month) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:11px">Selecciona un técnico y un mes.</div>';
+    return;
+  }
+
+  const [yr, mo] = month.split('-').map(Number);
   const days = new Date(yr, mo, 0).getDate();
-  for (let d=1; d<=days; d++) {
-    const dt = new Date(yr, mo-1, d);
-    const dk = dkStr(dt);
-    const existing = DB.schedules.find(s=>s.codigo===code&&s.fecha===dk);
-    const dayName  = DAYS_ES[dt.getDay()];
-    const tr = document.createElement('tr');
-    const selOpts = SHIFT_PRESETS.map(p =>
-      `<option value="${p.value}"${existing?.horario===p.value?' selected':''}>${p.label}</option>`
-    ).join('');
-    // ── Color según turno ────────────────────────────
-    let shiftColor='var(--muted)';
-    if(existing?.horario==='07:00 – 16:00') shiftColor='var(--green)';
-    else if(existing?.horario==='09:00 – 18:00') shiftColor='var(--accent1)';
-    else if(existing?.horario==='13:00 – 22:00') shiftColor='var(--accent4)';
-    else if(existing?.horario==='22:00 – 07:00') shiftColor='var(--accent5)';
-    else if(existing?.horario==='DESCANSO') shiftColor='var(--accent3)';
-    tr.innerHTML=`
-      <td style="color:var(--muted);font-size:10px">${dk}</td>
-      <td style="color:${shiftColor};font-size:10px">${dayName}</td>
-      <td><select data-dk="${dk}" data-day="${dayName}" class="sched-sel" onchange="updateSchedColor(this)" style="border-color:${existing?'var(--border2)':'var(--border)'}">
-        <option value="">— Sin registro —</option>${selOpts}</select></td>
-      <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>`;
-    tbody.appendChild(tr);
+
+  summary.style.display = 'flex';
+  updateSchSummary(); // inicializa en 0
+
+  for (let d = 1; d <= days; d++) {
+    const dt      = new Date(yr, mo-1, d);
+    const dk      = dkStr(dt);
+    const dayName = DAYS_ES[dt.getDay()];
+    const isWE    = WEEKEND.has(dt.getDay());
+    const existing= DB.schedules.find(s => s.codigo === code && s.fecha === dk);
+
+    const row = document.createElement('div');
+    row.className = 'sch-day-row' + (isWE ? ' weekend' : '');
+    if (existing?.horario === 'DESCANSO') row.classList.add('is-rest');
+
+    // ── Preset del turno existente ────────────────────
+    const preset = existing ? getPreset(existing.horario) : null;
+
+    // Construir options del select
+    const opts = `<option value="">— Sin registro —</option>` +
+      SHIFT_PRESETS.map(p =>
+        `<option value="${p.value}"${existing?.horario === p.value ? ' selected' : ''}>${p.emoji} ${p.label}</option>`
+      ).join('');
+
+    // Pill de turno actual (visible cuando hay registro)
+    const pillColor  = preset ? preset.color : 'var(--muted)';
+    const pillBg     = preset ? preset.color.replace(')', ',.12)').replace('var(', 'rgba(').replace('--green','46,255,170').replace('--accent1','0,229,184').replace('--accent4','77,184,255').replace('--accent5','176,110,255').replace('--accent3','255,184,48').replace('--muted','74,98,120') : '';
+    const pillText   = preset ? `${preset.emoji} ${preset.turno}` : '';
+
+    row.innerHTML = `
+      <div class="sch-cell" style="flex-direction:column;align-items:flex-start;gap:2px;">
+        <span class="sch-cell-date">${String(d).padStart(2,'0')}
+          <small>${yr}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}</small>
+        </span>
+      </div>
+      <div class="sch-cell sch-cell-day" style="color:${isWE ? 'var(--accent5)' : 'var(--text)'}">
+        ${isWE ? `<span style="font-size:9px;margin-right:4px">🏖</span>` : ''}${dayName}
+      </div>
+      <div class="sch-cell sch-cell-shift">
+        <div style="display:flex;flex-direction:column;gap:5px;width:100%">
+          <select data-dk="${dk}" data-day="${dayName}" class="sched-sel"
+            onchange="onShiftChange(this)"
+            style="color:${preset ? preset.color : 'var(--muted)'}">
+            ${opts}
+          </select>
+          ${preset ? `<span class="shift-pill" style="color:${pillColor};background:rgba(0,0,0,.25);border:1px solid ${pillColor}40">${pillText}</span>` : ''}
+        </div>
+      </div>
+      <div class="sch-cell sch-cell-del">
+        <button title="Quitar fila" onclick="this.closest('.sch-day-row').remove();updateSchSummary()">✕</button>
+      </div>`;
+
+    container.appendChild(row);
   }
+
+  updateSchSummary();
 }
 
-// ── updateSchedColor — colores para 4 turnos ─────────
-function updateSchedColor(sel){
-  const val=sel.value;
-  let c='var(--muted)';
-  if(val==='07:00 – 16:00') c='var(--green)';
-  else if(val==='09:00 – 18:00') c='var(--accent1)';
-  else if(val==='13:00 – 22:00') c='var(--accent4)';
-  else if(val==='22:00 – 07:00') c='var(--accent5)';
-  else if(val==='DESCANSO') c='var(--accent3)';
-  sel.style.color=c;
+// ── Actualiza el color del select y el pill al cambiar ──
+function onShiftChange(sel) {
+  const val    = sel.value;
+  const preset = getPreset(val);
+  sel.style.color = preset ? preset.color : 'var(--muted)';
+
+  // Actualizar pill
+  const wrap = sel.closest('.sch-cell-shift').querySelector('div');
+  let pill = wrap.querySelector('.shift-pill');
+  if (preset) {
+    if (!pill) { pill = document.createElement('span'); pill.className = 'shift-pill'; wrap.appendChild(pill); }
+    pill.style.color      = preset.color;
+    pill.style.background = 'rgba(0,0,0,.25)';
+    pill.style.border     = `1px solid ${preset.color}40`;
+    pill.textContent      = `${preset.emoji} ${preset.turno}`;
+  } else {
+    if (pill) pill.remove();
+  }
+
+  // Clase is-rest en la fila
+  const row = sel.closest('.sch-day-row');
+  row.classList.toggle('is-rest', val === 'DESCANSO');
+
+  updateSchSummary();
 }
 
-function addScheduleRow(){
-  const tbody=document.getElementById('sched-tbody');
-  const tr=document.createElement('tr');
-  const selOpts=SHIFT_PRESETS.map(p=>`<option value="${p.value}">${p.label}</option>`).join('');
-  tr.innerHTML=`
-    <td><input type="date" data-custom="1" style="width:130px"></td>
-    <td><input type="text" placeholder="Lunes…" style="width:90px"></td>
-    <td><select class="sched-sel" onchange="updateSchedColor(this)"><option value="">— Sin registro —</option>${selOpts}</select></td>
-    <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>`;
-  tbody.appendChild(tr);
-}
-
-async function saveScheduleTable(){
-  const code=document.getElementById('sch-user-sel').value;
-  if(!code){alert('Selecciona un técnico');return;}
-  const rows=document.querySelectorAll('#sched-tbody tr');
-  const records=[];
-  rows.forEach(tr=>{
-    const sel=tr.querySelector('.sched-sel');
-    if(!sel||!sel.value) return;
-    const dateEl=tr.querySelector('[data-custom]');
-    const dk=dateEl?dateEl.value:sel.dataset.dk;
-    const inputs=tr.querySelectorAll('input');
-    const day=dateEl?(inputs[1]?.value||DAYS_ES[new Date(dk+'T00:00:00').getDay()]):sel.dataset.day;
-    if(!dk) return;
-    records.push({codigo:code,fecha:dk,dia:day,horario:sel.value});
+// ── Actualiza el resumen de conteos ──────────────────
+function updateSchSummary() {
+  const sels = document.querySelectorAll('#sch-rows-container .sched-sel');
+  let morning=0, mid=0, afternoon=0, night=0, rest=0;
+  sels.forEach(s => {
+    if (s.value === '07:00 – 16:00') morning++;
+    else if (s.value === '09:00 – 18:00') mid++;
+    else if (s.value === '13:00 – 22:00') afternoon++;
+    else if (s.value === '22:00 – 07:00') night++;
+    else if (s.value === 'DESCANSO') rest++;
   });
-  if(!records.length){alert('No hay registros para guardar');return;}
-  const btn=document.getElementById('btn-save-sched');
-  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Guardando…';
-  let ok=0,fail=0;
-  for(const r of records){
-    try{const res=await apiPost({action:'saveSchedule',...r});res.ok?ok++:fail++;}
-    catch(e){fail++;}
+  document.getElementById('cnt-morning').textContent   = morning;
+  document.getElementById('cnt-mid').textContent       = mid;
+  document.getElementById('cnt-afternoon').textContent = afternoon;
+  document.getElementById('cnt-night').textContent     = night;
+  document.getElementById('cnt-rest').textContent      = rest;
+}
+
+// ── Agregar fila manual ──────────────────────────────
+function addScheduleRow() {
+  const container = document.getElementById('sch-rows-container');
+  // Limpiar el mensaje vacío si existe
+  const emptyMsg = container.querySelector('div[style*="text-align:center"]');
+  if (emptyMsg) emptyMsg.remove();
+
+  const opts = `<option value="">— Sin registro —</option>` +
+    SHIFT_PRESETS.map(p => `<option value="${p.value}">${p.emoji} ${p.label}</option>`).join('');
+
+  const row = document.createElement('div');
+  row.className = 'sch-day-row';
+  row.innerHTML = `
+    <div class="sch-cell">
+      <input type="date" data-custom="1"
+        style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);
+               padding:6px 10px;border-radius:8px;font-family:var(--font-mono);font-size:11px;
+               outline:none;width:120px;">
+    </div>
+    <div class="sch-cell sch-cell-day" style="color:var(--muted);font-size:10px">Auto</div>
+    <div class="sch-cell sch-cell-shift">
+      <div style="display:flex;flex-direction:column;gap:5px;width:100%">
+        <select class="sched-sel" onchange="onShiftChange(this)" style="color:var(--muted)">
+          ${opts}
+        </select>
+      </div>
+    </div>
+    <div class="sch-cell sch-cell-del">
+      <button title="Quitar fila" onclick="this.closest('.sch-day-row').remove();updateSchSummary()">✕</button>
+    </div>`;
+  container.appendChild(row);
+}
+
+// ── Guardar horarios — FIX: incluye turno_nombre ─────
+async function saveScheduleTable() {
+  const code = document.getElementById('sch-user-sel').value;
+  if (!code) { alert('Selecciona un técnico'); return; }
+
+  const rows = document.querySelectorAll('#sch-rows-container .sch-day-row');
+  const records = [];
+
+  rows.forEach(row => {
+    const sel     = row.querySelector('.sched-sel');
+    const dateInp = row.querySelector('[data-custom]');
+    if (!sel || !sel.value) return;
+
+    let dk, dayName;
+    if (dateInp) {
+      dk = dateInp.value;
+      dayName = dk ? DAYS_ES[new Date(dk + 'T00:00:00').getDay()] : '';
+    } else {
+      dk      = sel.dataset.dk;
+      dayName = sel.dataset.day;
+    }
+    if (!dk) return;
+
+    // ── FIX: obtener turno_nombre desde el preset ──
+    const preset     = getPreset(sel.value);
+    const turnoNombre = preset ? preset.turno : '';
+
+    records.push({
+      codigo:        code,
+      fecha:         dk,
+      dia:           dayName,
+      horario:       sel.value,
+      turno_nombre:  turnoNombre   // ← FIX: ahora siempre se incluye
+    });
+  });
+
+  if (!records.length) { alert('No hay registros para guardar'); return; }
+
+  const btn = document.getElementById('btn-save-sched');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando…';
+
+  let ok = 0, fail = 0;
+  for (const r of records) {
+    try {
+      const res = await apiPost({ action:'saveSchedule', ...r });
+      res.ok ? ok++ : fail++;
+    } catch(e) { fail++; }
   }
-  btn.disabled=false;btn.textContent='💾 Guardar horarios';
-  alert(`✅ ${ok} registros guardados${fail>0?` · ${fail} errores`:''}`);
+
+  btn.disabled = false;
+  btn.textContent = '💾 Guardar horarios';
+  alert(`✅ ${ok} registros guardados${fail > 0 ? ` · ${fail} errores` : ''}`);
   await refreshAll();
+  loadScheduleTable(); // refresca el grid
 }
 
 // ── OT FILE PROCESSING ────────────────────────────────
