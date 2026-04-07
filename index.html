@@ -7,9 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-/* ══════════════════════════════════════════════
-   DESIGN TOKENS
-══════════════════════════════════════════════ */
 :root{
   --bg:#080c14;--surface:#0f1623;--surface2:#161f30;--surface3:#1c2840;
   --border:#1e2d42;--border2:#243350;
@@ -20,17 +17,11 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100vh;overflow-x:hidden;}
-
-/* Animated background grid */
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:
-    linear-gradient(rgba(0,229,184,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,229,184,.03) 1px, transparent 1px);
+  background-image:linear-gradient(rgba(0,229,184,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,184,.03) 1px,transparent 1px);
   background-size:40px 40px;
 }
-
-/* ── HEADER ──────────────────────────────────── */
 header{
   position:sticky;top:0;z-index:300;
   background:rgba(8,12,20,.92);backdrop-filter:blur(20px);
@@ -39,63 +30,34 @@ header{
 }
 header::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--accent1),var(--accent4),var(--accent5),transparent);
-  opacity:.5;
+  background:linear-gradient(90deg,transparent,var(--accent1),var(--accent4),var(--accent5),transparent);opacity:.5;
 }
 .logo{display:flex;align-items:center;gap:12px;flex:1;}
-.logo-mark{
-  width:36px;height:36px;border-radius:9px;
-  background:linear-gradient(135deg,var(--accent1),var(--accent4));
-  display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
-}
+.logo-mark{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--accent1),var(--accent4));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 .logo-text{font-family:var(--font-head);font-weight:800;font-size:14px;letter-spacing:.3px;}
 .logo-sub{font-size:9px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:1px;}
-.h-badge{
-  background:rgba(0,229,184,.08);border:1px solid rgba(0,229,184,.2);
-  color:var(--accent1);padding:4px 11px;border-radius:20px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;
-}
+.h-badge{background:rgba(0,229,184,.08);border:1px solid rgba(0,229,184,.2);color:var(--accent1);padding:4px 11px;border-radius:20px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;}
 #h-status{font-size:10px;color:var(--muted);letter-spacing:.5px;margin-left:auto;}
-#h-status.ok{color:var(--accent1);}
-#h-status.err{color:var(--accent2);}
-
-/* ── NAV TABS ──────────────────────────────────── */
-.nav{
-  display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);
-  border-radius:12px;padding:4px;margin:20px 32px 0;width:fit-content;position:relative;z-index:1;
-}
-.nav-btn{
-  padding:7px 18px;border-radius:8px;border:none;background:transparent;
-  color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:10px;
-  letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;
-}
+#h-status.ok{color:var(--accent1);}#h-status.err{color:var(--accent2);}
+.nav{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin:20px 32px 0;width:fit-content;position:relative;z-index:1;}
+.nav-btn{padding:7px 18px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:10px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .nav-btn.active{background:var(--accent1);color:#080c14;}
 .nav-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
 .nav-btn.admin-tab{color:var(--accent3);}
 .nav-btn.admin-tab.active{background:var(--accent3);color:#080c14;}
-
-/* ── MAIN ──────────────────────────────────── */
 main{padding:24px 32px 60px;max-width:1800px;margin:0 auto;position:relative;z-index:1;}
 .panel{display:none;animation:fadeUp .3s ease both;}
 .panel.active{display:block;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-
-/* ── SECTION TITLES ──────────────────────────────────── */
 .stitle{font-family:var(--font-head);font-size:22px;font-weight:800;margin-bottom:4px;}
 .stitle em{color:var(--accent1);font-style:normal;}
 .ssub{color:var(--muted);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px;}
-
-/* ── CARDS / SURFACES ──────────────────────────────────── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .card-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
 .card-head h3{font-family:var(--font-head);font-weight:700;font-size:13px;flex:1;}
 .card-body{padding:20px;}
-
-/* ── STATS ──────────────────────────────────── */
 .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
-.scard{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:16px 20px;position:relative;overflow:hidden;cursor:default;transition:transform .2s,border-color .2s;
-}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;position:relative;overflow:hidden;cursor:default;transition:transform .2s,border-color .2s;}
 .scard:hover{transform:translateY(-2px);border-color:var(--border2);}
 .scard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
 .scard:nth-child(1)::before{background:var(--accent1);}
@@ -110,31 +72,16 @@ main{padding:24px 32px 60px;max-width:1800px;margin:0 auto;position:relative;z-i
 .scard:nth-child(3) .scard-val{color:var(--accent3);}
 .scard:nth-child(4) .scard-val{color:var(--accent5);}
 .scard:nth-child(5) .scard-val{color:var(--accent2);}
-
-/* ── FORMS ──────────────────────────────────── */
 .form-row{display:grid;gap:12px;margin-bottom:14px;}
 .form-row.cols-2{grid-template-columns:1fr 1fr;}
 .form-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
 .form-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
 .fgroup{display:flex;flex-direction:column;gap:5px;}
 .fgroup label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);}
-.fgroup input,.fgroup select,.fgroup textarea{
-  background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;
-  outline:none;transition:border-color .2s,background .2s;
-}
-.fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{
-  border-color:var(--accent1);background:var(--surface3);
-}
+.fgroup input,.fgroup select,.fgroup textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;outline:none;transition:border-color .2s,background .2s;}
+.fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{border-color:var(--accent1);background:var(--surface3);}
 .fgroup textarea{min-height:70px;resize:vertical;}
-
-/* ── BUTTONS ──────────────────────────────────── */
-.btn{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:9px 18px;border-radius:9px;border:none;cursor:pointer;
-  font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:.5px;
-  transition:all .2s;white-space:nowrap;
-}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:.5px;transition:all .2s;white-space:nowrap;}
 .btn-primary{background:linear-gradient(135deg,var(--accent1),var(--accent4));color:#080c14;}
 .btn-primary:hover{opacity:.88;transform:translateY(-1px);}
 .btn-secondary{background:rgba(0,229,184,.1);color:var(--accent1);border:1px solid rgba(0,229,184,.25);}
@@ -148,18 +95,13 @@ main{padding:24px 32px 60px;max-width:1800px;margin:0 auto;position:relative;z-i
 .btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important;}
 .btn-sm{padding:5px 12px;font-size:10px;}
 .btn-xs{padding:3px 9px;font-size:9px;border-radius:6px;}
-
-/* ── TABLES ──────────────────────────────────── */
 .table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
 table{width:100%;border-collapse:collapse;font-size:11px;}
 thead tr{background:var(--surface2);}
-th{padding:10px 14px;text-align:left;font-family:var(--font-head);font-size:9px;font-weight:700;
-   letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+th{padding:10px 14px;text-align:left;font-family:var(--font-head);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
 td{padding:10px 14px;border-bottom:1px solid rgba(30,45,66,.5);vertical-align:middle;background:var(--surface);}
 tr:hover td{background:var(--surface2);}
 tr:last-child td{border-bottom:none;}
-
-/* ── TAGS / BADGES ──────────────────────────────────── */
 .tag{display:inline-block;padding:2px 8px;border-radius:5px;font-size:9px;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;}
 .tag-green{background:rgba(0,229,184,.12);color:var(--accent1);border:1px solid rgba(0,229,184,.2);}
 .tag-blue{background:rgba(77,184,255,.12);color:var(--accent4);border:1px solid rgba(77,184,255,.2);}
@@ -167,36 +109,20 @@ tr:last-child td{border-bottom:none;}
 .tag-red{background:rgba(255,82,99,.12);color:var(--accent2);border:1px solid rgba(255,82,99,.2);}
 .tag-purple{background:rgba(176,110,255,.12);color:var(--accent5);border:1px solid rgba(176,110,255,.2);}
 .tag-muted{background:rgba(74,98,120,.15);color:var(--muted);border:1px solid rgba(74,98,120,.25);}
-
-/* ── FILTER BAR ──────────────────────────────────── */
 .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;}
 .filter-bar label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);}
-.filter-bar select,.filter-bar input{
-  background:var(--surface);border:1px solid var(--border);color:var(--text);
-  padding:7px 12px;border-radius:8px;font-family:var(--font-mono);font-size:11px;outline:none;
-  transition:border-color .2s;
-}
+.filter-bar select,.filter-bar input{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-family:var(--font-mono);font-size:11px;outline:none;transition:border-color .2s;}
 .filter-bar select:hover,.filter-bar input:hover{border-color:var(--accent1);}
-
-/* ── USER CARDS (distribution) ──────────────────────────────────── */
 .ugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:20px;}
-.ucard{
-  background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;
-  transition:box-shadow .3s,transform .2s;
-}
+.ucard{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:box-shadow .3s,transform .2s;}
 .ucard:hover{box-shadow:0 8px 40px rgba(0,0,0,.6);transform:translateY(-2px);}
 .uhead{padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
-.avatar{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-head);font-weight:800;font-size:12px;color:#080c14;flex-shrink:0;}
+.avatar{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:12px;color:#080c14;flex-shrink:0;}
 .uinfo h3{font-family:var(--font-head);font-size:13px;font-weight:700;}
 .uinfo p{font-size:10px;color:var(--muted);margin-top:2px;}
-
-/* ── SCHEDULE ITEMS ──────────────────────────────────── */
 .day-sched{padding:10px 20px 16px;}
-.day-title{font-size:9px;font-family:var(--font-head);font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;color:var(--muted);padding:6px 0 10px;border-bottom:1px solid var(--border);margin-bottom:8px;}
-.sched-item{display:grid;grid-template-columns:54px 14px 1fr;gap:0 10px;padding:7px 0;
-  border-bottom:1px solid rgba(30,45,66,.6);position:relative;}
+.day-title{font-size:9px;font-family:var(--font-head);font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 0 10px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.sched-item{display:grid;grid-template-columns:54px 14px 1fr;gap:0 10px;padding:7px 0;border-bottom:1px solid rgba(30,45,66,.6);position:relative;}
 .sched-item:last-child{border-bottom:none;}
 .si-time{font-size:11px;font-weight:500;color:var(--accent1);text-align:right;padding-top:1px;white-space:nowrap;}
 .si-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0;}
@@ -208,25 +134,17 @@ tr:last-child td{border-bottom:none;}
 .sched-item.is-done{opacity:.55;}
 .sched-item.is-done .si-name{text-decoration:line-through;color:var(--muted);}
 .sched-item.is-done .si-dot{background:var(--accent1)!important;}
-
-/* ── COMPLIANCE BAR ──────────────────────────────────── */
-.comp-bar{display:flex;align-items:center;gap:12px;padding:10px 20px;
-  background:rgba(0,229,184,.04);border-top:1px solid rgba(0,229,184,.12);}
+.comp-bar{display:flex;align-items:center;gap:12px;padding:10px 20px;background:rgba(0,229,184,.04);border-top:1px solid rgba(0,229,184,.12);}
 .comp-label{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
 .comp-val{font-family:var(--font-head);font-weight:700;font-size:12px;color:var(--accent1);}
 .comp-bg{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
 .comp-fill{height:100%;background:var(--accent1);border-radius:2px;transition:width .4s;}
-
-/* ── CHECK WRAP ──────────────────────────────────── */
 .check-wrap{display:flex;align-items:center;gap:7px;margin-top:5px;cursor:pointer;user-select:none;}
-.check-box{width:16px;height:16px;border-radius:4px;border:2px solid var(--border2);
-  background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.check-box{width:16px;height:16px;border-radius:4px;border:2px solid var(--border2);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .check-box.done{background:var(--accent1);border-color:var(--accent1);}
 .check-box.done::after{content:'✓';font-size:10px;font-weight:700;color:#080c14;}
 .check-label{font-size:9px;color:var(--muted);transition:color .2s;}
 .check-label.done{color:var(--accent1);}
-
-/* ── AVAIL BAR ──────────────────────────────────── */
 .avail{padding:11px 20px;border-top:1px solid var(--border);background:rgba(0,0,0,.2);}
 .avail-head{display:flex;justify-content:space-between;margin-bottom:5px;}
 .avail-head span{font-size:9px;letter-spacing:1px;text-transform:uppercase;}
@@ -234,31 +152,19 @@ tr:last-child td{border-bottom:none;}
 .avail-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
 .avail-fill{height:100%;border-radius:3px;transition:width .8s ease;}
 .avail-note{margin-top:5px;font-size:9px;}
-
-/* ── UPLOAD AREA ──────────────────────────────────── */
-.upload-area{
-  border:2px dashed var(--border2);border-radius:12px;padding:28px;text-align:center;
-  cursor:pointer;transition:all .3s;background:var(--surface);position:relative;
-}
+.upload-area{border:2px dashed var(--border2);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .3s;background:var(--surface);position:relative;}
 .upload-area:hover,.upload-area.drag{border-color:var(--accent1);background:rgba(0,229,184,.03);}
 .upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .upload-icon{font-size:32px;display:block;margin-bottom:8px;}
 .upload-title{font-family:var(--font-head);font-size:14px;font-weight:700;margin-bottom:6px;}
 .upload-sub{color:var(--muted);font-size:10px;line-height:1.8;}
 .upload-sub code{background:rgba(0,229,184,.1);color:var(--accent1);padding:1px 5px;border-radius:3px;font-size:9px;}
-
-/* ── PROCESS LOG ──────────────────────────────────── */
-.process-log{
-  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
-  padding:14px;font-size:10px;line-height:2;max-height:180px;overflow-y:auto;margin-top:12px;
-}
+.process-log{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:10px;line-height:2;max-height:180px;overflow-y:auto;margin-top:12px;}
 .log-line{color:var(--muted);}
 .log-line.ok{color:var(--accent1);}
 .log-line.warn{color:var(--accent3);}
 .log-line.err{color:var(--accent2);}
 .log-line.info{color:var(--accent4);}
-
-/* ── MONTHLY ──────────────────────────────────── */
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
 .mcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
 .mcard-title{font-family:var(--font-head);font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
@@ -267,68 +173,26 @@ tr:last-child td{border-bottom:none;}
 .mbar-bg{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
 .mbar-fill{height:100%;border-radius:3px;}
 .mbar-val{width:46px;text-align:right;font-size:10px;}
-
-/* ── TIMELINE TABLE ──────────────────────────────────── */
 .tl-wrap{overflow-x:auto;}
 .tl-table{min-width:1000px;width:100%;border-collapse:separate;border-spacing:0;}
-.tl-table th{background:var(--surface2);border:1px solid var(--border);padding:9px 12px;
-  font-family:var(--font-head);font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
-.tl-table td{border:1px solid var(--border);padding:9px 12px;font-size:10px;background:var(--surface);
-  white-space:nowrap;vertical-align:middle;transition:background .15s;}
+.tl-table th{background:var(--surface2);border:1px solid var(--border);padding:9px 12px;font-family:var(--font-head);font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.tl-table td{border:1px solid var(--border);padding:9px 12px;font-size:10px;background:var(--surface);white-space:nowrap;vertical-align:middle;transition:background .15s;}
 .tl-table tr:hover td{background:var(--surface2);}
 .tl-table tr.row-break td{background:rgba(46,255,170,.03);}
 .tl-table tr.row-transit td{background:rgba(255,184,48,.02);}
-
-/* ── MODAL ──────────────────────────────────── */
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
-  display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);
-}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 .modal-overlay.open{display:flex;}
-.modal{
-  background:var(--surface);border:1px solid var(--border);border-radius:18px;
-  padding:28px;width:min(560px,95vw);max-height:90vh;overflow-y:auto;
-  box-shadow:0 24px 60px rgba(0,0,0,.6);animation:modalIn .2s ease;
-}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;width:min(560px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:modalIn .2s ease;}
 @keyframes modalIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
 .modal h2{font-family:var(--font-head);font-size:18px;font-weight:800;margin-bottom:20px;}
 .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
-
-/* ── ADMIN LOGIN ──────────────────────────────────── */
-#admin-gate{
-  min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;
-  padding:40px;
-}
-.login-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:20px;
-  padding:40px;width:360px;text-align:center;
-}
-.login-card .logo-mark{width:60px;height:60px;font-size:26px;margin:0 auto 20px;border-radius:15px;}
-.login-card h2{font-family:var(--font-head);font-size:20px;font-weight:800;margin-bottom:6px;}
-.login-card p{color:var(--muted);font-size:11px;margin-bottom:24px;}
 .login-err{color:var(--accent2);font-size:10px;margin-top:8px;display:none;}
-
-/* ── NO DATA ──────────────────────────────────── */
 .nodata{text-align:center;padding:60px;color:var(--muted);}
 .nodata .nd-icon{font-size:36px;display:block;margin-bottom:12px;}
-
-/* ── CONFIG BANNER ──────────────────────────────────── */
-#config-banner{
-  background:rgba(255,184,48,.07);border:1px solid rgba(255,184,48,.25);border-radius:12px;
-  padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;
-  font-size:11px;color:var(--accent3);
-}
+#config-banner{background:rgba(255,184,48,.07);border:1px solid rgba(255,184,48,.25);border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:11px;color:var(--accent3);}
 #config-banner b{font-family:var(--font-head);font-size:12px;}
-#config-banner a{color:var(--accent3);text-underline-offset:3px;}
-
-/* ── SPINNER ──────────────────────────────────── */
-.spinner{
-  display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);
-  border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;
-}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:currentColor;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-/* ── GLOBAL COMPLIANCE SUMMARY ──────────────────────────────────── */
 .gcomp-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;}
 .gcomp-card h3{font-family:var(--font-head);font-weight:800;font-size:14px;margin-bottom:14px;color:var(--accent1);}
 .gcomp-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:11px;}
@@ -336,33 +200,18 @@ tr:last-child td{border-bottom:none;}
 .gcomp-bar-bg{flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden;}
 .gcomp-bar-fill{height:100%;border-radius:4px;transition:width .5s;}
 .gcomp-pct{width:40px;text-align:right;font-weight:700;font-size:11px;}
-
-/* ── COLOR PICKER ──────────────────────────────────── */
 .color-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
 .color-dot{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
 .color-dot:hover{transform:scale(1.2);}
 .color-dot.selected{border-color:#fff;}
-
-/* ── SCHEDULE BULK INPUT ──────────────────────────────────── */
 .sched-matrix{overflow-x:auto;margin-top:12px;}
 .sched-matrix table{min-width:700px;}
-.sched-matrix td input,.sched-matrix td select{
-  background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  padding:5px 8px;border-radius:6px;font-family:var(--font-mono);font-size:10px;width:100%;outline:none;
-}
+.sched-matrix td input,.sched-matrix td select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-family:var(--font-mono);font-size:10px;width:100%;outline:none;}
 .sched-matrix td input:focus,.sched-matrix td select:focus{border-color:var(--accent1);}
-
-/* ── NO SCHED NOTE ──────────────────────────────────── */
-.no-sched-note{
-  background:rgba(255,82,99,.06);border:1px solid rgba(255,82,99,.2);border-radius:8px;
-  padding:8px 14px;font-size:10px;color:var(--accent2);margin:8px 20px;text-align:center;
-}
-.night-note{
-  background:rgba(176,110,255,.06);border:1px solid rgba(176,110,255,.2);border-radius:8px;
-  padding:8px 14px;font-size:10px;color:var(--accent5);margin:8px 20px;text-align:center;
-}
-
-/* ── RESPONSIVE ──────────────────────────────────── */
+.no-sched-note{background:rgba(255,82,99,.06);border:1px solid rgba(255,82,99,.2);border-radius:8px;padding:8px 14px;font-size:10px;color:var(--accent2);margin:8px 20px;text-align:center;}
+.night-note{background:rgba(176,110,255,.06);border:1px solid rgba(176,110,255,.2);border-radius:8px;padding:8px 14px;font-size:10px;color:var(--accent5);margin:8px 20px;text-align:center;}
+/* Info box para columnas detectadas */
+.col-info{background:rgba(77,184,255,.08);border:1px solid rgba(77,184,255,.2);border-radius:8px;padding:10px 14px;font-size:10px;color:var(--accent4);margin-top:8px;line-height:1.8;}
 @media(max-width:900px){
   main,.nav{padding-left:16px;padding-right:16px;}
   .nav{margin-left:0;margin-right:0;flex-wrap:wrap;}
@@ -370,8 +219,6 @@ tr:last-child td{border-bottom:none;}
   .ugrid{grid-template-columns:1fr;}
   .form-row.cols-2,.form-row.cols-3,.form-row.cols-4{grid-template-columns:1fr;}
 }
-
-/* ── PRINT ──────────────────────────────────── */
 @media print{
   body{background:#fff!important;color:#111!important;}
   header,.nav,.stats-bar,.filter-bar,#config-banner{display:none!important;}
@@ -383,7 +230,6 @@ tr:last-child td{border-bottom:none;}
 </head>
 <body>
 
-<!-- ══ HEADER ═══════════════════════════════════ -->
 <header>
   <div class="logo">
     <div class="logo-mark">🔧</div>
@@ -396,7 +242,6 @@ tr:last-child td{border-bottom:none;}
   <div id="h-status">⚙ Configurando…</div>
 </header>
 
-<!-- ══ NAV ═══════════════════════════════════ -->
 <div class="nav" id="main-nav">
   <button class="nav-btn active" onclick="switchTab(0)">📊 Dashboard</button>
   <button class="nav-btn" onclick="switchTab(1)">📋 Distribución</button>
@@ -407,25 +252,20 @@ tr:last-child td{border-bottom:none;}
   <button class="nav-btn admin-tab" onclick="openAdmin()">⚙ Admin</button>
 </div>
 
-<!-- ══ MAIN ═══════════════════════════════════ -->
 <main>
-
-  <!-- Config banner (shown when API URL not set) -->
   <div id="config-banner" style="display:none">
     <span>⚠</span>
     <div>
       <b>Configuración requerida:</b>
-      La URL del Apps Script no está configurada. Edita la variable <code style="background:rgba(255,184,48,.15);padding:1px 5px;border-radius:3px;">API_URL</code>
-      al inicio del archivo <code style="background:rgba(255,184,48,.15);padding:1px 5px;border-radius:3px;">index.html</code>
-      con la URL de tu implementación de Apps Script.
+      Reemplaza <code style="background:rgba(255,184,48,.15);padding:1px 5px;border-radius:3px;">TU_URL_AQUI</code>
+      en la variable <code style="background:rgba(255,184,48,.15);padding:1px 5px;border-radius:3px;">API_URL</code> con tu URL de Apps Script.
     </div>
   </div>
 
-  <!-- ══ DASHBOARD ════════════════════════════ -->
+  <!-- DASHBOARD -->
   <div class="panel active" id="p0">
     <div class="stitle">📊 <em>Dashboard</em> General</div>
     <div class="ssub">Estado actual del sistema · Carga datos con el botón de OTs</div>
-
     <div class="stats-bar">
       <div class="scard"><div class="scard-label">Total OTs</div><div class="scard-val" id="s-ot">—</div></div>
       <div class="scard"><div class="scard-label">Técnicos</div><div class="scard-val" id="s-tec">—</div></div>
@@ -433,46 +273,33 @@ tr:last-child td{border-bottom:none;}
       <div class="scard"><div class="scard-label">Ocupación Media</div><div class="scard-val" id="s-ocu">—</div></div>
       <div class="scard"><div class="scard-label">OT Excedidas</div><div class="scard-val" id="s-exc">—</div></div>
     </div>
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <!-- OTs Upload -->
       <div class="card">
-        <div class="card-head">
-          <span>📂</span>
-          <h3>Cargar OTs desde Excel</h3>
-        </div>
+        <div class="card-head"><span>📂</span><h3>Cargar OTs desde Excel</h3></div>
         <div class="card-body">
           <p style="font-size:10px;color:var(--muted);margin-bottom:14px;line-height:1.7">
-            Sube el Excel crudo de OTs. El sistema lo procesa automáticamente:<br>
-            columna 1 → Usuario, cols 28-29 → Código OT, col 86 → Ubicación, col 81 → Equipo.
+            Sube el Excel de OTs. El sistema detecta automáticamente las columnas.<br>
+            <b style="color:var(--accent3)">Columnas esperadas:</b> Col.1→Usuario · Col.28-29→Código OT · Col.81→Equipo · Col.86→Ubicación
           </p>
           <div class="upload-area" id="ot-dropzone">
             <input type="file" id="ot-file" accept=".xlsx,.xls" onchange="handleOTFile(event)">
             <span class="upload-icon">📋</span>
-            <div class="upload-title">Excel de OTs (crudo)</div>
+            <div class="upload-title">Excel de OTs</div>
             <div class="upload-sub">Arrastra o haz clic · <code>.xlsx</code> · <code>.xls</code></div>
           </div>
+          <div id="ot-col-info" class="col-info" style="display:none"></div>
           <div id="ot-log" class="process-log" style="display:none"></div>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
             <button class="btn btn-primary" id="btn-upload-ots" onclick="uploadOTs()" disabled>
               ⚡ Procesar y Subir OTs
             </button>
-            <button class="btn btn-danger btn-sm" onclick="clearOTsDB()">
-              🗑 Limpiar OTs en DB
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="loadAndBuild()">
-              🔄 Recargar distribución
-            </button>
+            <button class="btn btn-danger btn-sm" onclick="clearOTsDB()">🗑 Limpiar OTs en DB</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAndBuild()">🔄 Recargar distribución</button>
           </div>
         </div>
       </div>
-
-      <!-- Status / Quick info -->
       <div class="card">
-        <div class="card-head">
-          <span>📡</span>
-          <h3>Estado del Sistema</h3>
-        </div>
+        <div class="card-head"><span>📡</span><h3>Estado del Sistema</h3></div>
         <div class="card-body">
           <div id="status-rows" style="font-size:11px;line-height:2.2;color:var(--muted)">
             <div>🔄 Cargando datos desde Google Sheets…</div>
@@ -486,7 +313,7 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 
-  <!-- ══ DISTRIBUCIÓN ════════════════════════════ -->
+  <!-- DISTRIBUCIÓN -->
   <div class="panel" id="p1">
     <div class="stitle">📋 Distribución <em>Diaria</em></div>
     <div class="ssub">Tareas con tiempos de tránsito, comidas y disponibilidad</div>
@@ -506,7 +333,7 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 
-  <!-- ══ MENSUAL ════════════════════════════ -->
+  <!-- MENSUAL -->
   <div class="panel" id="p2">
     <div class="stitle">📅 Vista <em>Mensual</em></div>
     <div class="ssub">Distribución de carga por técnico</div>
@@ -515,7 +342,7 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 
-  <!-- ══ TIMELINE ════════════════════════════ -->
+  <!-- TIMELINE -->
   <div class="panel" id="p3">
     <div class="stitle">⏱ <em>Timeline</em> Cronológico</div>
     <div class="ssub">Todas las actividades ordenadas por fecha y hora</div>
@@ -530,7 +357,7 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 
-  <!-- ══ CUMPLIMIENTO ════════════════════════════ -->
+  <!-- CUMPLIMIENTO -->
   <div class="panel" id="p4">
     <div class="stitle">✅ Registro de <em>Cumplimiento</em></div>
     <div class="ssub">Marca las actividades completadas · Se guarda en Google Sheets</div>
@@ -550,44 +377,37 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 
-  <!-- ══ IMPRIMIR ════════════════════════════ -->
+  <!-- IMPRIMIR -->
   <div class="panel" id="p5">
     <div class="stitle">🖨 <em>Imprimir</em> Horarios</div>
     <div class="ssub">Genera documentos de horario para los técnicos</div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:24px;">
       <div class="fgroup" style="flex:1;max-width:260px">
         <label>Colaborador</label>
-        <select id="print-user" onchange="renderPrintPreview()">
-          <option value="">— Seleccionar —</option>
-        </select>
+        <select id="print-user" onchange="renderPrintPreview()"><option value="">— Seleccionar —</option></select>
       </div>
       <button class="btn btn-purple" onclick="doPrint()">🖨 Imprimir seleccionado</button>
       <button class="btn btn-secondary" onclick="doPrintAll()">🖨 Imprimir todos</button>
     </div>
     <div id="print-preview" style="display:none">
-      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Vista previa — solo tareas</div>
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Vista previa</div>
       <div id="print-cards" style="display:flex;flex-direction:column;gap:14px;"></div>
     </div>
     <div class="nodata" id="print-nodata"><span class="nd-icon">👆</span><p>Selecciona un colaborador.</p></div>
   </div>
-
 </main>
 
-<!-- ══ ADMIN MODAL ════════════════════════════ -->
+<!-- ADMIN MODAL -->
 <div class="modal-overlay" id="admin-modal">
   <div class="modal" style="max-width:700px;width:95vw">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <h2 style="flex:1">⚙ Panel de Administración</h2>
       <button class="btn btn-sm" style="background:var(--surface2);color:var(--muted)" onclick="closeAdmin()">✕ Cerrar</button>
     </div>
-
-    <!-- Admin sub-tabs -->
     <div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:10px;margin-bottom:20px;">
       <button class="nav-btn active" id="adm-tab-0" onclick="switchAdminTab(0)" style="font-size:10px;padding:6px 14px">👤 Usuarios</button>
       <button class="nav-btn" id="adm-tab-1" onclick="switchAdminTab(1)" style="font-size:10px;padding:6px 14px">🗓 Horarios</button>
     </div>
-
-    <!-- USERS PANEL -->
     <div id="adm-p0">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div style="font-size:11px;color:var(--muted)">Usuarios registrados en el sistema</div>
@@ -600,15 +420,11 @@ tr:last-child td{border-bottom:none;}
         </table>
       </div>
     </div>
-
-    <!-- SCHEDULES PANEL -->
     <div id="adm-p1" style="display:none">
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
         <div class="fgroup" style="flex:1;max-width:200px">
           <label>Técnico</label>
-          <select id="sch-user-sel" onchange="loadScheduleTable()">
-            <option value="">— Seleccionar —</option>
-          </select>
+          <select id="sch-user-sel" onchange="loadScheduleTable()"><option value="">— Seleccionar —</option></select>
         </div>
         <div class="fgroup" style="flex:1;max-width:160px">
           <label>Mes / Año</label>
@@ -618,23 +434,22 @@ tr:last-child td{border-bottom:none;}
         <button class="btn btn-primary btn-sm" id="btn-save-sched" onclick="saveScheduleTable()">💾 Guardar horarios</button>
       </div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-        Turnos disponibles: <code style="color:var(--accent3)">22:00 – 07:00</code> (nocturno) &nbsp;·&nbsp;
+        Turnos: <code style="color:var(--accent5)">22:00 – 07:00</code> (nocturno) &nbsp;·&nbsp;
         <code style="color:var(--accent4)">13:00 – 22:00</code> (tarde) &nbsp;·&nbsp;
         <code style="color:var(--accent1)">09:00 – 18:00</code> (mañana) &nbsp;·&nbsp;
         <code style="color:var(--muted)">DESCANSO</code>
       </div>
       <div class="sched-matrix">
         <table>
-          <thead><tr><th>Fecha</th><th>Día</th><th>Turno (o DESCANSO)</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Día</th><th>Turno</th><th></th></tr></thead>
           <tbody id="sched-tbody"></tbody>
         </table>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- ══ USER EDIT MODAL ════════════════════════════ -->
+<!-- USER MODAL -->
 <div class="modal-overlay" id="user-modal">
   <div class="modal" style="max-width:440px">
     <h2 id="user-modal-title">👤 Nuevo Usuario</h2>
@@ -668,10 +483,10 @@ tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
-<!-- ══ ADMIN LOGIN MODAL ════════════════════════════ -->
+<!-- ADMIN LOGIN MODAL -->
 <div class="modal-overlay" id="admin-login">
-  <div class="modal" style="max-width:360px;text-align:center">
-    <div class="logo-mark" style="width:54px;height:54px;font-size:24px;border-radius:14px;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent1),var(--accent4));display:flex;align-items:center;justify-content:center;">⚙</div>
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="width:54px;height:54px;font-size:24px;border-radius:14px;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent1),var(--accent4));display:flex;align-items:center;justify-content:center;">⚙</div>
     <h2 style="margin-bottom:6px">Panel Admin</h2>
     <p style="color:var(--muted);font-size:11px;margin-bottom:20px">Introduce la contraseña de administrador</p>
     <div class="fgroup" style="text-align:left;margin-bottom:4px">
@@ -679,20 +494,23 @@ tr:last-child td{border-bottom:none;}
       <input type="password" id="admin-pw-input" placeholder="••••••••"
         onkeydown="if(event.key==='Enter')verifyAdmin()">
     </div>
-    <div id="login-err" class="login-err">Contraseña incorrecta</div>
+    <div id="login-err" class="login-err">Contraseña incorrecta. Intenta de nuevo.</div>
+    <div id="login-loading" style="font-size:10px;color:var(--accent4);margin-top:8px;display:none">
+      <span class="spinner" style="vertical-align:middle;margin-right:6px"></span>Verificando…
+    </div>
     <div class="modal-footer" style="justify-content:center;margin-top:16px">
       <button class="btn btn-sm" style="background:var(--surface2);color:var(--muted)" onclick="closeLogin()">Cancelar</button>
-      <button class="btn btn-primary" onclick="verifyAdmin()">Entrar</button>
+      <button class="btn btn-primary" id="btn-login" onclick="verifyAdmin()">Entrar</button>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// ⚙ CONFIGURACIÓN — CAMBIA ESTA URL por la de tu Apps Script
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// ⚙ CONFIGURACIÓN — PON AQUÍ TU URL DE APPS SCRIPT
+// ═══════════════════════════════════════════════════════
 const API_URL = "https://script.google.com/macros/s/AKfycbzCpVno6U0w5kwgwW8I61A63QdbOVjKN6KSNcc5ti2ENyi4mZorVoedFp6dgM-MnLit/exec";
-// ════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 
 const ADMIN_PW_KEY = "ws_admin_pw";
 const COLORS = ['#00e5b8','#4db8ff','#b06eff','#ffb830','#ff5263','#2effaa','#fb923c','#f472b6','#38bdf8','#a3e635'];
@@ -703,133 +521,177 @@ const MEALS = [
 ];
 const TRANSIT_MIN = 15;
 
-// ── STATE ────────────────────────────────────────────
-const DB  = { users: [], schedules: [], ots: [], compliance: [] };
-const ST  = { result: null, pendingOTs: null };
-const COMP = {}; // { "code||date||idx": true }
+const DB  = { users:[], schedules:[], ots:[], compliance:[] };
+const ST  = { result:null };
+const COMP = {};
 let adminUnlocked = false;
-let pendingAdminCallback = null;
+let _processedOTs = null;
 
 // ── INIT ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  if (API_URL.includes('TU_DEPLOYMENT_ID_AQUI')) {
+  if (!API_URL || API_URL.includes('TU_URL_AQUI')) {
     document.getElementById('config-banner').style.display = 'flex';
     setStatus('⚠ Configura la URL del Apps Script', 'err');
     return;
   }
   initColorPicker();
-  refreshAll();
-
-  // Set default month in schedule selector
   const now = new Date();
   document.getElementById('sch-month-sel').value =
     `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  refreshAll();
 });
 
-// ── API HELPERS ───────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+// API — CORRECCIÓN PRINCIPAL: Apps Script no acepta
+// Content-Type:application/json en POST desde browser.
+// Usamos GET con parámetros para lecturas y para
+// operaciones de escritura enviamos via fetch como
+// text/plain (Apps Script lee e.postData.contents igual)
+// ═══════════════════════════════════════════════════════
+
 async function apiGet(params) {
   const url = API_URL + '?' + new URLSearchParams(params);
-  const r = await fetch(url);
-  return r.json();
+  const r = await fetch(url, { redirect: 'follow' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const text = await r.text();
+  // Apps Script a veces devuelve con JSONP prefix; limpiarlo
+  const clean = text.replace(/^\/\*-secure-\n?\r?\s*/, '').replace(/\s*\*\/$/, '');
+  return JSON.parse(clean);
 }
 
 async function apiPost(body) {
+  const pw = sessionStorage.getItem(ADMIN_PW_KEY) || '';
+  const payload = JSON.stringify({ ...body, password: pw });
+  // Apps Script acepta POST con content-type text/plain correctamente
   const r = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...body, password: sessionStorage.getItem(ADMIN_PW_KEY) || '' })
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: payload,
+    redirect: 'follow'
   });
-  return r.json();
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const text = await r.text();
+  const clean = text.replace(/^\/\*-secure-\n?\r?\s*/, '').replace(/\s*\*\/$/, '');
+  return JSON.parse(clean);
 }
 
 // ── REFRESH ───────────────────────────────────────────
 async function refreshAll() {
   setStatus('🔄 Cargando…', '');
   try {
-    const data = await apiGet({ action: 'getAllData' });
-    if (!data.ok) throw new Error(data.error);
+    const data = await apiGet({ action:'getAllData' });
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
     DB.users      = data.users      || [];
     DB.schedules  = data.schedules  || [];
     DB.ots        = data.ots        || [];
     DB.compliance = data.compliance || [];
-
-    // Sync COMP
     Object.keys(COMP).forEach(k => delete COMP[k]);
     DB.compliance.forEach(r => {
       if (r.completado === '1') COMP[compKey(r.codigo, r.fecha, r.ot_index)] = true;
     });
-
     updateStatusRows();
     populateFilters();
     setStatus(`✓ ${DB.users.length} usuarios · ${DB.ots.length} OTs · ${DB.schedules.length} horarios`, 'ok');
-
-    if (DB.ots.length > 0 && DB.users.length > 0 && DB.schedules.length > 0) {
-      buildDistribution();
-    }
+    if (DB.ots.length > 0 && DB.users.length > 0) buildDistribution();
   } catch(e) {
+    console.error('refreshAll error:', e);
     setStatus('✗ Error: ' + e.message, 'err');
   }
 }
 
+function loadAndBuild() { refreshAll(); }
+
 function updateStatusRows() {
   document.getElementById('status-rows').innerHTML = `
-    <div>👥 Técnicos: <b style="color:var(--text)">${DB.users.filter(u=>u.activo==='1').length}</b> activos</div>
+    <div>👥 Técnicos activos: <b style="color:var(--text)">${DB.users.filter(u=>u.activo==='1').length}</b></div>
     <div>🗓 Registros de horario: <b style="color:var(--text)">${DB.schedules.length}</b></div>
-    <div>🔧 OTs activas en DB: <b style="color:var(--text)">${DB.ots.length}</b></div>
-    <div>✅ Registros de cumplimiento: <b style="color:var(--text)">${DB.compliance.length}</b></div>
-    <div>🕐 Última actualización: <b style="color:var(--accent4)">${new Date().toLocaleTimeString('es-PE')}</b></div>
+    <div>🔧 OTs en DB: <b style="color:var(--text)">${DB.ots.length}</b></div>
+    <div>✅ Registros cumplimiento: <b style="color:var(--text)">${DB.compliance.length}</b></div>
+    <div>🕐 Actualizado: <b style="color:var(--accent4)">${new Date().toLocaleTimeString('es-PE')}</b></div>
   `;
 }
-
 function setStatus(msg, cls) {
   const el = document.getElementById('h-status');
-  el.textContent = msg;
-  el.className = cls || '';
+  el.textContent = msg; el.className = cls || '';
 }
 
 // ── TABS ─────────────────────────────────────────────
 function switchTab(idx) {
-  document.querySelectorAll('.nav-btn:not(.admin-tab)').forEach((b, i) => b.classList.toggle('active', i === idx));
-  document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === idx));
-  if (idx === 4) renderCompliancePanel();
-  if (idx === 5) renderPrintPreview();
+  document.querySelectorAll('.nav-btn:not(.admin-tab)').forEach((b,i) => b.classList.toggle('active', i===idx));
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+  if (idx===4) renderCompliancePanel();
+  if (idx===5) renderPrintPreview();
 }
 
-// ── ADMIN ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+// ADMIN AUTH — CORRECCIÓN PRINCIPAL
+// verifyAdmin ahora usa apiPost con text/plain,
+// y maneja correctamente la respuesta async
+// ═══════════════════════════════════════════════════════
 function openAdmin() {
   if (adminUnlocked) {
     showAdminPanel();
   } else {
     document.getElementById('admin-login').classList.add('open');
-    setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
+    document.getElementById('admin-pw-input').value = '';
+    document.getElementById('login-err').style.display = 'none';
+    document.getElementById('login-loading').style.display = 'none';
+    setTimeout(() => document.getElementById('admin-pw-input').focus(), 150);
   }
 }
 function closeLogin() {
   document.getElementById('admin-login').classList.remove('open');
   document.getElementById('admin-pw-input').value = '';
   document.getElementById('login-err').style.display = 'none';
+  document.getElementById('login-loading').style.display = 'none';
 }
+
 async function verifyAdmin() {
-  const pw = document.getElementById('admin-pw-input').value;
-  const res = await apiPost({ action: 'verifyAdmin', password: pw });
-  if (res.ok) {
-    sessionStorage.setItem(ADMIN_PW_KEY, pw);
-    adminUnlocked = true;
-    closeLogin();
-    showAdminPanel();
-  } else {
+  const pw = document.getElementById('admin-pw-input').value.trim();
+  if (!pw) {
+    document.getElementById('login-err').textContent = 'Escribe la contraseña.';
     document.getElementById('login-err').style.display = 'block';
+    return;
+  }
+  const errEl  = document.getElementById('login-err');
+  const loadEl = document.getElementById('login-loading');
+  const btnEl  = document.getElementById('btn-login');
+  errEl.style.display = 'none';
+  loadEl.style.display = 'block';
+  btnEl.disabled = true;
+  try {
+    // Guardamos la contraseña temporalmente para el envío
+    sessionStorage.setItem(ADMIN_PW_KEY, pw);
+    const res = await apiPost({ action:'verifyAdmin', password: pw });
+    loadEl.style.display = 'none';
+    btnEl.disabled = false;
+    if (res && res.ok) {
+      adminUnlocked = true;
+      closeLogin();
+      showAdminPanel();
+    } else {
+      sessionStorage.removeItem(ADMIN_PW_KEY);
+      errEl.textContent = 'Contraseña incorrecta. Intenta de nuevo.';
+      errEl.style.display = 'block';
+      document.getElementById('admin-pw-input').select();
+    }
+  } catch(e) {
+    loadEl.style.display = 'none';
+    btnEl.disabled = false;
+    sessionStorage.removeItem(ADMIN_PW_KEY);
+    errEl.textContent = 'Error de conexión: ' + e.message;
+    errEl.style.display = 'block';
+    console.error('verifyAdmin error:', e);
   }
 }
+
 function showAdminPanel() {
   populateAdminUsers();
   populateSchUserSel();
   switchAdminTab(0);
   document.getElementById('admin-modal').classList.add('open');
 }
-function closeAdmin() {
-  document.getElementById('admin-modal').classList.remove('open');
-}
+function closeAdmin() { document.getElementById('admin-modal').classList.remove('open'); }
 function switchAdminTab(idx) {
   [0,1].forEach(i => {
     document.getElementById('adm-tab-'+i).classList.toggle('active', i===idx);
@@ -841,12 +703,16 @@ function switchAdminTab(idx) {
 function populateAdminUsers() {
   const tbody = document.getElementById('users-tbody');
   tbody.innerHTML = '';
+  if (!DB.users.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Sin usuarios registrados</td></tr>';
+    return;
+  }
   DB.users.forEach(u => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><b style="font-family:var(--font-head)">${u.codigo}</b></td>
-      <td>${u.nombre}</td>
-      <td><span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${u.color};vertical-align:middle;margin-right:6px"></span><span style="font-size:10px;color:var(--muted)">${u.color}</span></td>
+      <td>${u.nombre||'—'}</td>
+      <td><span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${u.color||'#888'};vertical-align:middle;margin-right:6px"></span><span style="font-size:10px;color:var(--muted)">${u.color||'—'}</span></td>
       <td>${u.activo==='1'?'<span class="tag tag-green">Activo</span>':'<span class="tag tag-red">Inactivo</span>'}</td>
       <td>
         <button class="btn btn-xs btn-secondary" onclick="openUserModal('${u.codigo}')">✏ Editar</button>
@@ -854,9 +720,6 @@ function populateAdminUsers() {
       </td>`;
     tbody.appendChild(tr);
   });
-  if (!DB.users.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Sin usuarios registrados</td></tr>';
-  }
 }
 
 function initColorPicker() {
@@ -877,39 +740,40 @@ function initColorPicker() {
 let _editingUser = null;
 function openUserModal(codigo) {
   _editingUser = codigo || null;
-  const u = codigo ? DB.users.find(x => x.codigo === codigo) : null;
+  const u = codigo ? DB.users.find(x => x.codigo===codigo) : null;
   document.getElementById('user-modal-title').textContent = codigo ? '✏ Editar Usuario' : '👤 Nuevo Usuario';
   document.getElementById('u-codigo').value  = u ? u.codigo : '';
   document.getElementById('u-nombre').value  = u ? u.nombre : '';
   document.getElementById('u-activo').value  = u ? u.activo : '1';
   document.getElementById('u-codigo').disabled = !!codigo;
-  // select color
   const col = u ? u.color : COLORS[0];
-  document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('selected', d.dataset.color === col));
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('selected', d.dataset.color===col));
   document.getElementById('user-modal').classList.add('open');
 }
-function closeUserModal() {
-  document.getElementById('user-modal').classList.remove('open');
-}
+function closeUserModal() { document.getElementById('user-modal').classList.remove('open'); }
 async function saveUserModal() {
   const codigo = document.getElementById('u-codigo').value.trim().toUpperCase();
   const nombre = document.getElementById('u-nombre').value.trim();
   const activo = document.getElementById('u-activo').value;
   const color  = document.querySelector('.color-dot.selected')?.dataset.color || COLORS[0];
-  if (!codigo) return alert('El código es obligatorio');
-  const res = await apiPost({ action: 'saveUser', codigo, nombre, color, activo });
-  if (res.ok) {
-    await refreshAll();
-    closeUserModal();
-    populateAdminUsers();
-    populateSchUserSel();
-  } else alert('Error: ' + res.error);
+  if (!codigo) { alert('El código es obligatorio'); return; }
+  try {
+    const res = await apiPost({ action:'saveUser', codigo, nombre, color, activo });
+    if (res.ok) {
+      await refreshAll();
+      closeUserModal();
+      populateAdminUsers();
+      populateSchUserSel();
+    } else alert('Error al guardar: ' + (res.error||'Error desconocido'));
+  } catch(e) { alert('Error de conexión: ' + e.message); }
 }
 async function deleteUser(codigo) {
   if (!confirm(`¿Eliminar usuario ${codigo}?`)) return;
-  const res = await apiPost({ action: 'deleteUser', codigo });
-  if (res.ok) { await refreshAll(); populateAdminUsers(); }
-  else alert('Error: ' + res.error);
+  try {
+    const res = await apiPost({ action:'deleteUser', codigo });
+    if (res.ok) { await refreshAll(); populateAdminUsers(); }
+    else alert('Error: ' + (res.error||'Error desconocido'));
+  } catch(e) { alert('Error de conexión: ' + e.message); }
 }
 
 // ── SCHEDULES ADMIN ───────────────────────────────────
@@ -918,15 +782,14 @@ function populateSchUserSel() {
   const cur = sel.value;
   sel.innerHTML = '<option value="">— Seleccionar técnico —</option>';
   DB.users.filter(u=>u.activo==='1').sort((a,b)=>a.codigo.localeCompare(b.codigo))
-    .forEach(u => sel.innerHTML += `<option value="${u.codigo}">${u.codigo} — ${u.nombre}</option>`);
+    .forEach(u => sel.innerHTML += `<option value="${u.codigo}">${u.codigo} — ${u.nombre||''}</option>`);
   if (cur) sel.value = cur;
 }
-
 const SHIFT_PRESETS = [
-  { label:'Mañana 09–18', value:'09:00 – 18:00' },
-  { label:'Tarde 13–22',  value:'13:00 – 22:00' },
-  { label:'Noche 22–07',  value:'22:00 – 07:00' },
-  { label:'Descanso',     value:'DESCANSO' },
+  {label:'Mañana 09–18',value:'09:00 – 18:00'},
+  {label:'Tarde 13–22', value:'13:00 – 22:00'},
+  {label:'Noche 22–07', value:'22:00 – 07:00'},
+  {label:'Descanso',    value:'DESCANSO'},
 ];
 const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
@@ -936,141 +799,213 @@ function loadScheduleTable() {
   const tbody = document.getElementById('sched-tbody');
   tbody.innerHTML = '';
   if (!code || !month) return;
-
-  const [yr, mo] = month.split('-').map(Number);
+  const [yr,mo] = month.split('-').map(Number);
   const days = new Date(yr, mo, 0).getDate();
-
-  for (let d = 1; d <= days; d++) {
-    const dt   = new Date(yr, mo-1, d);
-    const dk   = dkStr(dt);
-    const existing = DB.schedules.find(s => s.codigo === code && s.fecha === dk);
+  for (let d=1; d<=days; d++) {
+    const dt = new Date(yr, mo-1, d);
+    const dk = dkStr(dt);
+    const existing = DB.schedules.find(s=>s.codigo===code&&s.fecha===dk);
     const dayName  = DAYS_ES[dt.getDay()];
-
     const tr = document.createElement('tr');
     const selOpts = SHIFT_PRESETS.map(p =>
-      `<option value="${p.value}"${existing?.horario===p.value?'  selected':''}>${p.label}</option>`
+      `<option value="${p.value}"${existing?.horario===p.value?' selected':''}>${p.label}</option>`
     ).join('');
-
-    let shiftColor = 'var(--muted)';
-    if (existing?.horario === '09:00 – 18:00') shiftColor = 'var(--accent1)';
-    else if (existing?.horario === '13:00 – 22:00') shiftColor = 'var(--accent4)';
-    else if (existing?.horario === '22:00 – 07:00') shiftColor = 'var(--accent5)';
-    else if (existing?.horario === 'DESCANSO') shiftColor = 'var(--accent3)';
-
-    tr.innerHTML = `
+    let shiftColor='var(--muted)';
+    if(existing?.horario==='09:00 – 18:00') shiftColor='var(--accent1)';
+    else if(existing?.horario==='13:00 – 22:00') shiftColor='var(--accent4)';
+    else if(existing?.horario==='22:00 – 07:00') shiftColor='var(--accent5)';
+    else if(existing?.horario==='DESCANSO') shiftColor='var(--accent3)';
+    tr.innerHTML=`
       <td style="color:var(--muted);font-size:10px">${dk}</td>
       <td style="color:${shiftColor};font-size:10px">${dayName}</td>
-      <td>
-        <select data-dk="${dk}" data-day="${dayName}" class="sched-sel" onchange="updateSchedColor(this)"
-          style="border-color:${existing?'var(--border2)':'var(--border)'}">
-          <option value="">— Sin registro —</option>
-          ${selOpts}
-        </select>
-      </td>
-      <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>
-    `;
+      <td><select data-dk="${dk}" data-day="${dayName}" class="sched-sel" onchange="updateSchedColor(this)" style="border-color:${existing?'var(--border2)':'var(--border)'}">
+        <option value="">— Sin registro —</option>${selOpts}</select></td>
+      <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>`;
     tbody.appendChild(tr);
   }
 }
-
-function updateSchedColor(sel) {
-  const val = sel.value;
-  let c = 'var(--muted)';
-  if (val === '09:00 – 18:00') c = 'var(--accent1)';
-  else if (val === '13:00 – 22:00') c = 'var(--accent4)';
-  else if (val === '22:00 – 07:00') c = 'var(--accent5)';
-  else if (val === 'DESCANSO') c = 'var(--accent3)';
-  sel.style.color = c;
+function updateSchedColor(sel){
+  const val=sel.value;
+  let c='var(--muted)';
+  if(val==='09:00 – 18:00') c='var(--accent1)';
+  else if(val==='13:00 – 22:00') c='var(--accent4)';
+  else if(val==='22:00 – 07:00') c='var(--accent5)';
+  else if(val==='DESCANSO') c='var(--accent3)';
+  sel.style.color=c;
 }
-
-function addScheduleRow() {
-  const tbody = document.getElementById('sched-tbody');
-  const tr = document.createElement('tr');
-  const selOpts = SHIFT_PRESETS.map(p => `<option value="${p.value}">${p.label}</option>`).join('');
-  tr.innerHTML = `
+function addScheduleRow(){
+  const tbody=document.getElementById('sched-tbody');
+  const tr=document.createElement('tr');
+  const selOpts=SHIFT_PRESETS.map(p=>`<option value="${p.value}">${p.label}</option>`).join('');
+  tr.innerHTML=`
     <td><input type="date" data-custom="1" style="width:130px"></td>
     <td><input type="text" placeholder="Lunes…" style="width:90px"></td>
     <td><select class="sched-sel" onchange="updateSchedColor(this)"><option value="">— Sin registro —</option>${selOpts}</select></td>
-    <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>
-  `;
+    <td><button class="btn btn-xs btn-danger" onclick="this.closest('tr').remove()">✕</button></td>`;
   tbody.appendChild(tr);
 }
-
-async function saveScheduleTable() {
-  const code = document.getElementById('sch-user-sel').value;
-  if (!code) return alert('Selecciona un técnico');
-  const rows = document.querySelectorAll('#sched-tbody tr');
-  const records = [];
-  rows.forEach(tr => {
-    const sel = tr.querySelector('.sched-sel');
-    if (!sel || !sel.value) return;
-    const dateEl = tr.querySelector('[data-custom]');
-    const dk     = dateEl ? dateEl.value : sel.dataset.dk;
-    const day    = dateEl
-      ? (tr.querySelectorAll('input')[1]?.value || DAYS_ES[new Date(dk).getDay()])
-      : sel.dataset.day;
-    if (!dk) return;
-    records.push({ codigo: code, fecha: dk, dia: day, horario: sel.value });
+async function saveScheduleTable(){
+  const code=document.getElementById('sch-user-sel').value;
+  if(!code){alert('Selecciona un técnico');return;}
+  const rows=document.querySelectorAll('#sched-tbody tr');
+  const records=[];
+  rows.forEach(tr=>{
+    const sel=tr.querySelector('.sched-sel');
+    if(!sel||!sel.value) return;
+    const dateEl=tr.querySelector('[data-custom]');
+    const dk=dateEl?dateEl.value:sel.dataset.dk;
+    const inputs=tr.querySelectorAll('input');
+    const day=dateEl?(inputs[1]?.value||DAYS_ES[new Date(dk+'T00:00:00').getDay()]):sel.dataset.day;
+    if(!dk) return;
+    records.push({codigo:code,fecha:dk,dia:day,horario:sel.value});
   });
-  if (!records.length) return alert('No hay registros para guardar');
-  const btn = document.getElementById('btn-save-sched');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Guardando…';
-  // Save one by one
-  let ok = 0, fail = 0;
-  for (const r of records) {
-    const res = await apiPost({ action: 'saveSchedule', ...r });
-    res.ok ? ok++ : fail++;
+  if(!records.length){alert('No hay registros para guardar');return;}
+  const btn=document.getElementById('btn-save-sched');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Guardando…';
+  let ok=0,fail=0;
+  for(const r of records){
+    try{const res=await apiPost({action:'saveSchedule',...r});res.ok?ok++:fail++;}
+    catch(e){fail++;}
   }
-  btn.disabled = false; btn.textContent = '💾 Guardar horarios';
-  alert(`✅ ${ok} registros guardados${fail > 0 ? ` · ${fail} errores` : ''}`);
+  btn.disabled=false;btn.textContent='💾 Guardar horarios';
+  alert(`✅ ${ok} registros guardados${fail>0?` · ${fail} errores`:''}`);
   await refreshAll();
 }
 
-// ── OT FILE PROCESSING ────────────────────────────────
-let _processedOTs = null;
-
+// ═══════════════════════════════════════════════════════
+// OT FILE PROCESSING — CORRECCIÓN PRINCIPAL
+// Ahora detecta automáticamente las columnas y
+// muestra info detallada de lo que encontró
+// ═══════════════════════════════════════════════════════
 function handleOTFile(event) {
   const file = event.target.files[0];
   if (!file) return;
+  // Limpiar log anterior
+  const logEl = document.getElementById('ot-log');
+  const infoEl= document.getElementById('ot-col-info');
+  logEl.innerHTML=''; logEl.style.display='none';
+  infoEl.style.display='none';
+  document.getElementById('btn-upload-ots').disabled = true;
+  _processedOTs = null;
+
   const reader = new FileReader();
   reader.onload = e => {
     try {
       otLog('info', `📂 Leyendo: ${file.name}…`);
-      const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      // Read without headers (raw rows)
-      const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-      // Skip first row (headers)
-      const data = raw.slice(1).filter(row => row.some(v => v !== ''));
-      otLog('ok', `✓ ${data.length} filas leídas`);
+      const wb = XLSX.read(e.target.result, { type:'binary', cellDates:true });
+      const shName = wb.SheetNames[0];
+      otLog('info', `📄 Hoja activa: "${shName}"`);
+      const ws = wb.Sheets[shName];
+      // Leer como array de arrays (sin headers automáticos)
+      const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
+      if (!raw.length) { otLog('err','✗ El archivo está vacío'); return; }
 
-      if (data.length > 0 && data[0].length < 81) {
-        otLog('warn', `⚠ Solo ${data[0].length} columnas detectadas. Se requieren al menos 86 para col.86 (ubicación)`);
+      // Detectar si la primera fila es header o datos
+      const firstRow = raw[0];
+      const numCols  = firstRow.length;
+      otLog('ok', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
+
+      // Mostrar info de columnas clave
+      const colInfo = [];
+      if (numCols >= 1)  colInfo.push(`Col.1 (Usuario): "${String(firstRow[0]||'').substring(0,30)}"`);
+      if (numCols >= 28) colInfo.push(`Col.28 (OT parte 1): "${String(firstRow[27]||'').substring(0,30)}"`);
+      if (numCols >= 29) colInfo.push(`Col.29 (OT parte 2): "${String(firstRow[28]||'').substring(0,30)}"`);
+      if (numCols >= 7)  colInfo.push(`Col.7 (Duración): "${String(firstRow[6]||'').substring(0,20)}"`);
+      if (numCols >= 81) colInfo.push(`Col.81 (Equipo): "${String(firstRow[80]||'').substring(0,30)}"`);
+      if (numCols >= 86) colInfo.push(`Col.86 (Ubicación): "${String(firstRow[85]||'').substring(0,30)}"`);
+      infoEl.innerHTML = '<b>Columnas detectadas (fila 1):</b><br>' + colInfo.join('<br>');
+      infoEl.style.display = 'block';
+
+      // Determinar si hay fila de encabezado
+      // Si col[0] de la primera fila no parece un código de usuario, es header
+      const isHeader = /^(usuario|user|codigo|tecnico|empleado|col|#)/i.test(String(firstRow[0]||'').trim()) ||
+                       (firstRow[0]==='' && firstRow.some(v=>v!==''));
+      const dataRows = isHeader ? raw.slice(1) : raw;
+      otLog('info', `${isHeader?'⚙ Fila de encabezado detectada y omitida':'⚙ Sin fila de encabezado, procesando desde fila 1'}`);
+
+      // Filtrar filas vacías
+      const validRows = dataRows.filter(row => row.some(v => String(v).trim()!==''));
+      otLog('ok', `✓ ${validRows.length} filas de datos válidas`);
+
+      if (!validRows.length) { otLog('err','✗ No se encontraron filas de datos válidas'); return; }
+
+      // Procesar OTs
+      const byUser = {};
+      const errors = [];
+      _processedOTs = [];
+
+      validRows.forEach((row, idx) => {
+        // Col 1 (índice 0) = código usuario
+        const codUser = String(row[0]||'').trim().toUpperCase();
+        if (!codUser) return; // filas sin usuario las omitimos
+
+        // Col 28-29 (índices 27-28) = código OT
+        const ot1 = String(row[27]||'').trim();
+        const ot2 = String(row[28]||'').trim();
+        const codigoOT = [ot1,ot2].filter(Boolean).join(' - ') || `OT-${idx+1}`;
+
+        // Col 86 (índice 85) = Ubicación/Sucursal
+        // Con fallback a col 85 y 84 si no existe
+        let ubicacion = '';
+        if (numCols >= 86) ubicacion = String(row[85]||'').trim();
+        if (!ubicacion && numCols >= 85) ubicacion = String(row[84]||'').trim();
+
+        // Col 81 (índice 80) = Equipo
+        let equipo = '';
+        if (numCols >= 81) equipo = String(row[80]||'').trim();
+        if (!equipo && numCols >= 80) equipo = String(row[79]||'').trim();
+
+        // Duración: col 7 (índice 6), puede estar en horas decimales
+        let durMin = 60; // default 1 hora
+        const durRaw = row[6];
+        if (durRaw !== undefined && durRaw !== null && durRaw !== '') {
+          const parsed = parseFloat(String(durRaw).replace(',','.'));
+          if (!isNaN(parsed) && parsed > 0) {
+            // Si el valor es menor que 24, asumimos horas; si es mayor, asumimos minutos
+            durMin = parsed <= 24 ? Math.round(parsed * 60) : Math.round(parsed);
+          }
+        }
+        durMin = Math.max(15, Math.min(durMin, 480)); // entre 15min y 8h
+
+        // Col 10 (índice 9) = Catálogo/Descripción
+        const catalogo = String(row[9]||row[10]||'').trim();
+        // Col 12 (índice 11) = Contrato
+        const contrato = String(row[11]||row[12]||'').trim();
+
+        _processedOTs.push({
+          codigo_usuario: codUser,
+          codigo_ot:      codigoOT,
+          ubicacion:      ubicacion,
+          equipo:         equipo,
+          duracion_min:   durMin,
+          catalogo:       catalogo,
+          contrato:       contrato,
+          proveedor:      ''
+        });
+        byUser[codUser] = (byUser[codUser]||0)+1;
+      });
+
+      // Resumen por usuario
+      const userList = Object.entries(byUser).sort((a,b)=>b[1]-a[1]);
+      userList.forEach(([u,c]) => otLog('ok', `  → ${u}: ${c} OT${c!==1?'s':''}`));
+      otLog('ok', `📊 Total procesadas: ${_processedOTs.length} OTs · ${userList.length} técnico(s)`);
+
+      // Advertencias
+      if (numCols < 86) otLog('warn', `⚠ Archivo tiene ${numCols} columnas. Columna 86 (ubicación) no disponible.`);
+      if (numCols < 81) otLog('warn', `⚠ Columna 81 (equipo) no disponible.`);
+      if (_processedOTs.length === 0) {
+        otLog('err', '✗ No se procesaron OTs. Verifica que la columna 1 tenga códigos de usuario.');
+        return;
       }
 
-      _processedOTs = data.map(row => {
-        const codUser  = String(row[0]  ?? '').trim().toUpperCase();
-        const codigoOT = [String(row[27]??''), String(row[28]??'')].map(s=>s.trim()).filter(Boolean).join(' - ');
-        const ubicacion = String(row[85] ?? row[84] ?? '').trim();  // col 86 (0-indexed: 85)
-        const equipo    = String(row[80] ?? row[79] ?? '').trim();  // col 81 (0-indexed: 80)
-        // Try to get duration and other fields from various positions
-        const durRaw   = parseFloat(row[6] ?? row[7] ?? row[5] ?? 1);
-        const durMin   = Math.round((isNaN(durRaw) ? 1 : durRaw) * 60);
-        const catalogo = String(row[9]  ?? row[10] ?? '').trim();
-        const contrato = String(row[11] ?? row[12] ?? '').trim();
-        return { codigo_usuario: codUser, codigo_ot: codigoOT, ubicacion, equipo, duracion_min: durMin, catalogo, contrato, proveedor: '' };
-      }).filter(r => r.codigo_usuario);
-
-      // Summary
-      const byUser = {};
-      _processedOTs.forEach(r => { byUser[r.codigo_usuario] = (byUser[r.codigo_usuario]||0)+1; });
-      Object.entries(byUser).forEach(([u,c]) => otLog('ok', `  → ${u}: ${c} OTs`));
-      otLog('ok', `📊 Total: ${_processedOTs.length} OTs procesadas`);
       document.getElementById('btn-upload-ots').disabled = false;
+      otLog('ok', `✅ Listo para subir. Haz clic en "Procesar y Subir OTs"`);
     } catch(err) {
-      otLog('err', '✗ Error: ' + err.message);
+      otLog('err', '✗ Error procesando archivo: ' + err.message);
+      console.error('handleOTFile error:', err);
     }
   };
+  reader.onerror = () => otLog('err', '✗ No se pudo leer el archivo');
   reader.readAsBinaryString(file);
 }
 
@@ -1085,132 +1020,136 @@ function otLog(type, msg) {
 }
 
 async function uploadOTs() {
-  if (!_processedOTs || !_processedOTs.length) return;
+  if (!_processedOTs || !_processedOTs.length) { alert('Primero carga un archivo Excel'); return; }
   if (!adminUnlocked) { openAdmin(); return; }
   const btn = document.getElementById('btn-upload-ots');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Subiendo…';
-  // Upload in batches of 50
-  const batch = 50;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Subiendo…';
+  const BATCH = 50;
   let uploaded = 0;
-  for (let i = 0; i < _processedOTs.length; i += batch) {
-    const chunk = _processedOTs.slice(i, i + batch);
-    const res = await apiPost({ action: 'saveOTs', ots: chunk });
-    if (res.ok) { uploaded += chunk.length; otLog('ok', `✓ Subidas ${uploaded}/${_processedOTs.length}…`); }
-    else { otLog('err', '✗ Error en batch: ' + res.error); break; }
+  let errCount = 0;
+  for (let i=0; i<_processedOTs.length; i+=BATCH) {
+    const chunk = _processedOTs.slice(i, i+BATCH);
+    try {
+      const res = await apiPost({ action:'saveOTs', ots:chunk });
+      if (res.ok) { uploaded += chunk.length; otLog('ok', `✓ Subidas ${uploaded}/${_processedOTs.length}…`); }
+      else { otLog('err', '✗ Error en lote: ' + (res.error||'Error')); errCount++; }
+    } catch(e) { otLog('err', '✗ Error de red: ' + e.message); errCount++; }
   }
-  btn.disabled = false; btn.textContent = '⚡ Procesar y Subir OTs';
-  otLog('ok', `✅ Completado: ${uploaded} OTs en Google Sheets`);
+  btn.disabled = false;
+  btn.textContent = '⚡ Procesar y Subir OTs';
+  otLog(errCount>0?'warn':'ok', `${errCount>0?'⚠':'✅'} Completado: ${uploaded} OTs subidas${errCount>0?` · ${errCount} lotes con error`:''}`);
   await refreshAll();
 }
 
 async function clearOTsDB() {
   if (!adminUnlocked) { openAdmin(); return; }
-  if (!confirm('¿Eliminar TODAS las OTs de la base de datos?')) return;
-  const res = await apiPost({ action: 'clearOTs' });
-  if (res.ok) { otLog('warn', '⚠ Todas las OTs eliminadas de la DB'); await refreshAll(); }
-  else alert('Error: ' + res.error);
+  if (!confirm('¿Eliminar TODAS las OTs de la base de datos? Esta acción no se puede deshacer.')) return;
+  try {
+    const res = await apiPost({ action:'clearOTs' });
+    if (res.ok) { otLog('warn','⚠ Todas las OTs eliminadas de la DB'); await refreshAll(); }
+    else alert('Error: ' + (res.error||'Error desconocido'));
+  } catch(e) { alert('Error de conexión: ' + e.message); }
 }
 
-// ── COMPLIANCE SYNC ────────────────────────────────────
+// ── COMPLIANCE ────────────────────────────────────────
 async function saveComplianceToDB() {
-  if (!ST.result) return;
+  if (!ST.result) { setStatus('⚠ Sin datos de distribución', 'err'); return; }
   const records = [];
   Object.entries(COMP).forEach(([key, done]) => {
     const [codigo, fecha, idx] = key.split('||');
-    records.push({ codigo, fecha, ot_index: idx, completado: done ? '1' : '0' });
+    if (codigo && fecha && idx !== undefined) {
+      records.push({ codigo, fecha, ot_index:idx, completado:done?'1':'0' });
+    }
   });
-  if (!records.length) return;
-  const res = await apiPost({ action: 'saveCompliance', records });
-  if (res.ok) setStatus(`✓ Cumplimiento guardado · ${new Date().toLocaleTimeString('es-PE')}`, 'ok');
-  else setStatus('✗ Error guardando cumplimiento: ' + res.error, 'err');
+  if (!records.length) { setStatus('⚠ Sin cambios de cumplimiento para guardar', ''); return; }
+  try {
+    const res = await apiPost({ action:'saveCompliance', records });
+    if (res.ok) setStatus(`✓ Cumplimiento guardado · ${new Date().toLocaleTimeString('es-PE')}`, 'ok');
+    else setStatus('✗ Error: ' + (res.error||'Error'), 'err');
+  } catch(e) { setStatus('✗ Error de conexión: ' + e.message, 'err'); }
 }
 
-// ─── DISTRIBUTION ENGINE (same logic as original) ────────────────
-
+// ─── DISTRIBUTION ENGINE ──────────────────────────────
 function buildDistribution() {
-  // Map schedules
   const schByCode = {};
   DB.schedules.forEach(s => {
     if (!schByCode[s.codigo]) schByCode[s.codigo] = [];
-    const isRest = /^(DESCANSO|DESC|REST|LIBRE|DAY\s*OFF|OFF)/i.test(s.horario);
+    const isRest = /^(DESCANSO|DESC|REST|LIBRE|DAY\s*OFF|OFF)/i.test(String(s.horario||'').trim());
     if (isRest) {
-      schByCode[s.codigo].push({ dateKey: s.fecha, date: parseDate(s.fecha), day: s.dia, rest: true });
+      schByCode[s.codigo].push({dateKey:s.fecha,date:parseDate(s.fecha),day:s.dia,rest:true});
       return;
     }
     const parsed = parseSchedule(s.horario);
-    if (!parsed || parsed.rest) return;
-    schByCode[s.codigo].push({ dateKey: s.fecha, date: parseDate(s.fecha), day: s.dia, ...parsed });
+    if (!parsed||parsed.rest) return;
+    schByCode[s.codigo].push({dateKey:s.fecha,date:parseDate(s.fecha),day:s.dia,...parsed});
   });
 
-  // Map OTs
   const otByCode = {};
   DB.ots.forEach(o => {
     const code = normCode(o.codigo_usuario);
     if (!code) return;
     if (!otByCode[code]) otByCode[code] = [];
     otByCode[code].push({
-      equipo:   o.equipo    || '',
-      sucursal: o.ubicacion || '',
-      catalogo: o.codigo_ot || '',
-      ot:       o.codigo_ot || '',
-      contrato: o.contrato  || '',
-      durMin:   parseInt(o.duracion_min) || 60,
+      equipo:   o.equipo||'',
+      sucursal: o.ubicacion||'',
+      catalogo: o.catalogo||o.codigo_ot||'',
+      ot:       o.codigo_ot||'',
+      contrato: o.contrato||'',
+      durMin:   Math.max(15, parseInt(o.duracion_min)||60),
     });
   });
 
-  const allGroups = [];
-  const allCodes  = new Set([...Object.keys(otByCode), ...Object.keys(schByCode)]);
+  const allGroups  = [];
+  const colorMap   = {};
   let colorIdx = 0;
-  const colorMap = {};
   DB.users.forEach(u => { colorMap[u.codigo] = u.color; });
 
+  const allCodes = new Set([...Object.keys(otByCode), ...Object.keys(schByCode)]);
   allCodes.forEach(code => {
-    const color     = colorMap[code] || COLORS[colorIdx++ % COLORS.length];
-    const allEntries= (schByCode[code]||[]).slice().sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-    const taskQueue = [...(otByCode[code]||[])];
-    const workDays  = allEntries.filter(e=>!e.rest);
-    const restDays  = allEntries.filter(e=> e.rest);
-    const uInfo     = DB.users.find(u=>u.codigo===code);
+    const color    = colorMap[code] || COLORS[colorIdx++ % COLORS.length];
+    const entries  = (schByCode[code]||[]).slice().sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+    const taskQueue= [...(otByCode[code]||[])];
+    const workDays = entries.filter(e=>!e.rest);
+    const restDays = entries.filter(e=> e.rest);
+    const uInfo    = DB.users.find(u=>u.codigo===code);
 
     restDays.forEach(s => {
-      allGroups.push({ code, color, uName: uInfo?.nombre||code, date: s.date, dkey: s.dateKey,
-        day: s.day, slotStart:0, slotEnd:0, hasSched:true, isRest:true, overnight:false,
-        scheduled:[], overtime:[], usedWork:0, totalFree:0, pct:0, taskCount:0, otItems:[] });
+      allGroups.push({code,color,uName:uInfo?.nombre||code,date:s.date,dkey:s.dateKey,
+        day:s.day,slotStart:0,slotEnd:0,hasSched:true,isRest:true,overnight:false,
+        scheduled:[],overtime:[],usedWork:0,totalFree:0,pct:0,taskCount:0,otItems:[]});
     });
 
     let remaining = [...taskQueue];
-    workDays.forEach((sched, dayIdx) => {
-      const isLastDay = dayIdx === workDays.length - 1;
+    workDays.forEach((sched,dayIdx) => {
+      const isLastDay = dayIdx===workDays.length-1;
       const trial = assignTasks(sched.start, sched.end, remaining.map(t=>({...t})));
       const fittingCount = trial.scheduled.filter(s=>s.type==='task'&&!s.overTime).length;
-      const dayTasks = isLastDay ? remaining : remaining.slice(0, fittingCount);
-      const leftover = isLastDay ? [] : remaining.slice(fittingCount);
-      const {scheduled,overtime,usedWork,totalFree,pct} = assignTasks(sched.start, sched.end, dayTasks.map(t=>({...t})));
+      const dayTasks  = isLastDay ? remaining : remaining.slice(0, fittingCount);
+      const leftover  = isLastDay ? [] : remaining.slice(fittingCount);
+      const result    = assignTasks(sched.start, sched.end, dayTasks.map(t=>({...t})));
       allGroups.push({
-        code, color, uName: uInfo?.nombre||code, date: sched.date, dkey: sched.dateKey,
-        day: sched.day, slotStart: sched.start, slotEnd: sched.end,
-        hasSched: true, isRest: false, overnight: sched.overnight||false,
-        scheduled, overtime, usedWork, totalFree, pct,
-        taskCount: dayTasks.length, otItems: dayTasks,
+        code,color,uName:uInfo?.nombre||code,date:sched.date,dkey:sched.dateKey,
+        day:sched.day,slotStart:sched.start,slotEnd:sched.end,
+        hasSched:true,isRest:false,overnight:sched.overnight||false,
+        ...result,taskCount:dayTasks.length,otItems:dayTasks,
       });
       remaining = leftover;
     });
 
-    if (remaining.length > 0 && workDays.length === 0) {
+    if (remaining.length>0 && workDays.length===0) {
       allGroups.push({
-        code, color, uName: uInfo?.nombre||code, date: null, dkey: 'sin-fecha',
-        day:'—', slotStart:480, slotEnd:1020,
-        hasSched:false, isRest:false, overnight:false,
-        scheduled: remaining.map((t,i)=>({type:'task',...t,startMin:480+i*75,endMin:480+i*75+t.durMin,overTime:true})),
-        overtime: remaining, usedWork: remaining.reduce((s,t)=>s+t.durMin,0),
-        totalFree:540, pct:100, taskCount:remaining.length, otItems:remaining,
+        code,color,uName:uInfo?.nombre||code,date:null,dkey:'sin-fecha',
+        day:'—',slotStart:480,slotEnd:1020,hasSched:false,isRest:false,overnight:false,
+        scheduled:remaining.map((t,i)=>({type:'task',...t,startMin:480+i*75,endMin:480+i*75+t.durMin,overTime:true})),
+        overtime:remaining,usedWork:remaining.reduce((s,t)=>s+t.durMin,0),
+        totalFree:540,pct:100,taskCount:remaining.length,otItems:remaining,
       });
     }
   });
 
   allGroups.sort((a,b)=>a.code<b.code?-1:a.code>b.code?1:a.dkey.localeCompare(b.dkey));
   ST.result = allGroups;
-
   renderStats(allGroups);
   renderCards(allGroups);
   renderMonthly(allGroups);
@@ -1223,145 +1162,127 @@ function buildDistribution() {
 // ─── SCHEDULING ENGINE ────────────────────────────────
 function buildFreeSlots(shiftStart, shiftEnd) {
   const mealCandidates = [...MEALS];
-  if (shiftEnd > 1440) MEALS.forEach(m => mealCandidates.push({...m, start:m.start+1440, end:m.end+1440}));
-  const breaks = [];
-  const seen = new Set();
-  mealCandidates.forEach(meal => {
-    if (meal.end <= shiftStart || meal.start >= shiftEnd) return;
-    const bStart = Math.max(meal.start, shiftStart);
-    const bEnd   = bStart + meal.dur;
-    if (bEnd > shiftEnd) return;
-    if (!seen.has(bStart)) { seen.add(bStart); breaks.push({start:bStart,end:bEnd,name:meal.name,isMeal:true}); }
+  if (shiftEnd > 1440) MEALS.forEach(m => mealCandidates.push({...m,start:m.start+1440,end:m.end+1440}));
+  const breaks=[]; const seen=new Set();
+  mealCandidates.forEach(meal=>{
+    if(meal.end<=shiftStart||meal.start>=shiftEnd) return;
+    const bStart=Math.max(meal.start,shiftStart);
+    const bEnd  =bStart+meal.dur;
+    if(bEnd>shiftEnd) return;
+    if(!seen.has(bStart)){seen.add(bStart);breaks.push({start:bStart,end:bEnd,name:meal.name,isMeal:true});}
   });
   breaks.sort((a,b)=>a.start-b.start);
-  const slots = [];
-  let cursor = shiftStart;
-  breaks.forEach(b => { if(b.start>cursor) slots.push({start:cursor,end:b.start}); cursor=b.end; });
-  if (cursor < shiftEnd) slots.push({start:cursor,end:shiftEnd});
-  return { slots, breaks };
+  const slots=[]; let cursor=shiftStart;
+  breaks.forEach(b=>{if(b.start>cursor)slots.push({start:cursor,end:b.start});cursor=b.end;});
+  if(cursor<shiftEnd) slots.push({start:cursor,end:shiftEnd});
+  return {slots,breaks};
 }
 
 function assignTasks(shiftStart, shiftEnd, tasks) {
-  const {slots, breaks} = buildFreeSlots(shiftStart, shiftEnd);
-  const scheduled = [];
-  const slotsCopy = slots.map(s=>({...s}));
-  let taskQueue   = [...tasks];
-
-  for (let si = 0; si < slotsCopy.length && taskQueue.length > 0; si++) {
-    let cursor = slotsCopy[si].start;
-    const slotEnd = slotsCopy[si].end;
-    let firstInSlot = true;
-    while (taskQueue.length > 0) {
-      const transit   = firstInSlot ? 0 : TRANSIT_MIN;
-      const task      = taskQueue[0];
-      const available = slotEnd - cursor;
-      if (available >= transit + task.durMin) {
-        if (!firstInSlot) { scheduled.push({type:'transit',name:'🚶 Tránsito entre áreas',startMin:cursor,endMin:cursor+TRANSIT_MIN,durMin:TRANSIT_MIN}); cursor+=TRANSIT_MIN; }
+  const {slots,breaks}=buildFreeSlots(shiftStart,shiftEnd);
+  const scheduled=[]; const slotsCopy=slots.map(s=>({...s})); let taskQueue=[...tasks];
+  for(let si=0;si<slotsCopy.length&&taskQueue.length>0;si++){
+    let cursor=slotsCopy[si].start; const slotEnd=slotsCopy[si].end; let firstInSlot=true;
+    while(taskQueue.length>0){
+      const transit=firstInSlot?0:TRANSIT_MIN; const task=taskQueue[0];
+      const available=slotEnd-cursor;
+      if(available>=transit+task.durMin){
+        if(!firstInSlot){scheduled.push({type:'transit',name:'🚶 Tránsito entre áreas',startMin:cursor,endMin:cursor+TRANSIT_MIN,durMin:TRANSIT_MIN});cursor+=TRANSIT_MIN;}
         scheduled.push({type:'task',...task,startMin:cursor,endMin:cursor+task.durMin,overTime:false});
-        cursor += task.durMin;
-        taskQueue.shift();
-        firstInSlot = false;
+        cursor+=task.durMin; taskQueue.shift(); firstInSlot=false;
       } else break;
     }
   }
-
-  if (taskQueue.length > 0) {
-    let cursor = shiftEnd;
-    taskQueue.forEach(task => {
-      scheduled.push({type:'task',...task,startMin:cursor,endMin:cursor+task.durMin,overTime:true});
-      cursor += task.durMin;
-    });
+  if(taskQueue.length>0){
+    let cursor=shiftEnd;
+    taskQueue.forEach(task=>{scheduled.push({type:'task',...task,startMin:cursor,endMin:cursor+task.durMin,overTime:true});cursor+=task.durMin;});
   }
-
-  breaks.forEach(b => scheduled.push({type:'break',name:b.name,startMin:b.start,endMin:b.end,durMin:b.end-b.start}));
+  breaks.forEach(b=>scheduled.push({type:'break',name:b.name,startMin:b.start,endMin:b.end,durMin:b.end-b.start}));
   scheduled.sort((a,b)=>a.startMin-b.startMin);
-  const usedWork = scheduled.filter(s=>s.type==='task').reduce((s,t)=>s+t.durMin,0);
-  const totalFree = slots.reduce((s,sl)=>s+(sl.end-sl.start),0);
-  const pct = Math.round(Math.min(100,(usedWork/Math.max(1,totalFree))*100));
-  return { scheduled, overtime: taskQueue, usedWork, totalFree, pct };
+  const usedWork=scheduled.filter(s=>s.type==='task').reduce((s,t)=>s+t.durMin,0);
+  const totalFree=slots.reduce((s,sl)=>s+(sl.end-sl.start),0);
+  const pct=Math.round(Math.min(100,(usedWork/Math.max(1,totalFree))*100));
+  return {scheduled,overtime:taskQueue,usedWork,totalFree,pct};
 }
 
-// ─── HELPERS ──────────────────────────────────────────
+// ─── HELPERS ─────────────────────────────────────────
 function normCode(v){ return String(v||'').trim().toUpperCase(); }
 function parseDate(v){
-  if (!v) return null;
-  if (v instanceof Date) return isNaN(v)?null:v;
-  const s = String(v);
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return new Date(+m[1],+m[2]-1,+m[3]);
-  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-  if (m) return new Date(+m[3],+m[2]-1,+m[1]);
-  const d = new Date(v); return isNaN(d)?null:d;
+  if(!v) return null;
+  if(v instanceof Date) return isNaN(v)?null:v;
+  const s=String(v);
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m) return new Date(+m[3],+m[2]-1,+m[1]);
+  const d=new Date(v); return isNaN(d)?null:d;
 }
 function dkStr(d){
-  if (!d) return '';
-  const dt = d instanceof Date ? d : new Date(d);
+  if(!d) return '';
+  const dt=d instanceof Date?d:new Date(d);
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 function parseSchedule(str){
-  if (!str) return null;
-  if (/^(DESCANSO|DESC|REST|LIBRE|OFF)/i.test(str.trim())) return {rest:true};
-  const s = String(str).replace(/[–—−]/g,'-').replace(/\s/g,'');
-  const m = s.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);
-  if (!m) return null;
-  let start = +m[1]*60+ +m[2];
-  let end   = +m[3]*60+ +m[4];
-  const overnight = end <= start;
-  if (overnight) end += 1440;
-  return { start, end, total: end-start, overnight };
+  if(!str) return null;
+  if(/^(DESCANSO|DESC|REST|LIBRE|OFF)/i.test(String(str).trim())) return {rest:true};
+  const s=String(str).replace(/[–—−]/g,'-').replace(/\s/g,'');
+  const m=s.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);
+  if(!m) return null;
+  let start=+m[1]*60+ +m[2]; let end=+m[3]*60+ +m[4];
+  const overnight=end<=start;
+  if(overnight) end+=1440;
+  return {start,end,total:end-start,overnight};
 }
 function hhmm(min){
-  const t = ((min%1440)+1440)%1440;
-  const label = `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
-  return min >= 1440 ? label+'<span style="font-size:9px;color:var(--accent3);margin-left:2px">+1</span>' : label;
+  const t=((min%1440)+1440)%1440;
+  const label=`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+  return min>=1440?label+'<span style="font-size:9px;color:var(--accent3);margin-left:2px">+1</span>':label;
 }
 function hhmmPlain(min){
-  const t = ((min%1440)+1440)%1440;
+  const t=((min%1440)+1440)%1440;
   return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
 }
-function fmtDur(min){ const h=Math.floor(min/60),m=min%60; return h>0?(m>0?`${h}h ${m}m`:`${h}h`):`${m}m`; }
+function fmtDur(min){const h=Math.floor(min/60),m=min%60;return h>0?(m>0?`${h}h ${m}m`:`${h}h`):`${m}m`;}
 
 // ─── COMPLIANCE ───────────────────────────────────────
 function compKey(code,dkey,idx){ return `${code}||${dkey}||${idx}`; }
 function toggleTask(code,dkey,idx){
-  const key = compKey(code,dkey,idx);
-  COMP[key] = !COMP[key];
+  const key=compKey(code,dkey,idx);
+  COMP[key]=!COMP[key];
   document.querySelectorAll(`[data-ckey="${key}"]`).forEach(wrap=>{
-    const done = COMP[key];
-    const box  = wrap.querySelector('.check-box');
-    const lbl  = wrap.querySelector('.check-label');
-    const item = wrap.closest('.sched-item');
-    if (box) box.classList.toggle('done', done);
-    if (lbl) { lbl.textContent = done?'✓ Completado':'Marcar como completado'; lbl.classList.toggle('done',done); }
-    if (item) item.classList.toggle('is-done', done);
+    const done=COMP[key];
+    const box=wrap.querySelector('.check-box'); const lbl=wrap.querySelector('.check-label');
+    const item=wrap.closest('.sched-item');
+    if(box) box.classList.toggle('done',done);
+    if(lbl){lbl.textContent=done?'✓ Completado':'Marcar como completado';lbl.classList.toggle('done',done);}
+    if(item) item.classList.toggle('is-done',done);
   });
-  refreshCompBar(code,dkey);
-  refreshGlobalSummary();
+  refreshCompBar(code,dkey); refreshGlobalSummary();
 }
 function refreshCompBar(code,dkey){
-  const id = `cb-${code}-${dkey}`.replace(/[^a-zA-Z0-9\-]/g,'_');
-  const el = document.getElementById(id);
-  if (!el||!ST.result) return;
-  const g = ST.result.find(x=>x.code===code&&x.dkey===dkey);
-  if (!g) return;
-  const tasks = (g.scheduled||[]).filter(s=>s.type==='task');
-  const done  = tasks.filter((_,i)=>COMP[compKey(code,dkey,i)]).length;
-  const pct   = tasks.length ? Math.round(done/tasks.length*100) : 0;
-  el.querySelector('.comp-fill').style.width = pct+'%';
-  el.querySelector('.comp-val').textContent  = `${done}/${tasks.length} · ${pct}%`;
+  const id=`cb-${code}-${dkey}`.replace(/[^a-zA-Z0-9\-]/g,'_');
+  const el=document.getElementById(id);
+  if(!el||!ST.result) return;
+  const g=ST.result.find(x=>x.code===code&&x.dkey===dkey);
+  if(!g) return;
+  const tasks=(g.scheduled||[]).filter(s=>s.type==='task');
+  const done=tasks.filter((_,i)=>COMP[compKey(code,dkey,i)]).length;
+  const pct=tasks.length?Math.round(done/tasks.length*100):0;
+  el.querySelectorAll('.comp-fill').forEach(f=>f.style.width=pct+'%');
+  el.querySelectorAll('.comp-val').forEach(v=>v.textContent=`${done}/${tasks.length} · ${pct}%`);
 }
 function refreshGlobalSummary(){
-  if (!ST.result) return;
-  const byCode = {};
+  if(!ST.result) return;
+  const byCode={};
   ST.result.filter(g=>!g.isRest).forEach(g=>{
-    const tasks = (g.scheduled||[]).filter(s=>s.type==='task');
-    if (!tasks.length) return;
-    if (!byCode[g.code]) byCode[g.code]={total:0,done:0,color:g.color};
-    tasks.forEach((_,i)=>{ byCode[g.code].total++; if(COMP[compKey(g.code,g.dkey,i)]) byCode[g.code].done++; });
+    const tasks=(g.scheduled||[]).filter(s=>s.type==='task');
+    if(!tasks.length) return;
+    if(!byCode[g.code]) byCode[g.code]={total:0,done:0,color:g.color};
+    tasks.forEach((_,i)=>{byCode[g.code].total++;if(COMP[compKey(g.code,g.dkey,i)])byCode[g.code].done++;});
   });
-  const rows = Object.entries(byCode).map(([code,d])=>{
-    const pct = d.total ? Math.round(d.done/d.total*100) : 0;
-    const bar = pct===100?'#2effaa':pct>=70?'#00e5b8':pct>=40?'#ffb830':'#ff5263';
+  const rows=Object.entries(byCode).map(([code,d])=>{
+    const pct=d.total?Math.round(d.done/d.total*100):0;
+    const bar=pct===100?'#2effaa':pct>=70?'#00e5b8':pct>=40?'#ffb830':'#ff5263';
     return `<div class="gcomp-row">
       <span class="gcomp-name">${code}</span>
       <div class="gcomp-bar-bg"><div class="gcomp-bar-fill" style="width:${pct}%;background:${bar}"></div></div>
@@ -1369,105 +1290,103 @@ function refreshGlobalSummary(){
       <span style="font-size:10px;color:var(--muted)">${d.done}/${d.total}</span>
     </div>`;
   }).join('');
-  const el = document.getElementById('gcomp-rows');
-  if (el) el.innerHTML = rows || '<p style="color:var(--muted);font-size:11px">Sin tareas.</p>';
+  const el=document.getElementById('gcomp-rows');
+  if(el) el.innerHTML=rows||'<p style="color:var(--muted);font-size:11px">Sin tareas.</p>';
 }
 
-// ─── RENDER STATS ──────────────────────────────────────
+// ─── RENDER STATS ─────────────────────────────────────
 function renderStats(g){
-  const totalOT  = g.reduce((s,x)=>s+x.taskCount,0);
-  const totalTec = new Set(g.map(x=>x.code)).size;
-  const totalW   = g.reduce((s,x)=>s+x.usedWork,0);
-  const avg      = g.length ? Math.round(g.reduce((s,x)=>s+x.pct,0)/g.length) : 0;
-  const exc      = g.reduce((s,x)=>s+x.overtime.length,0);
-  document.getElementById('s-ot').textContent  = totalOT;
-  document.getElementById('s-tec').textContent = totalTec;
-  document.getElementById('s-hrs').textContent = fmtDur(totalW);
-  document.getElementById('s-ocu').textContent = avg+'%';
-  document.getElementById('s-exc').textContent = exc;
+  const totalOT =g.reduce((s,x)=>s+x.taskCount,0);
+  const totalTec=new Set(g.map(x=>x.code)).size;
+  const totalW  =g.reduce((s,x)=>s+x.usedWork,0);
+  const avg     =g.length?Math.round(g.reduce((s,x)=>s+x.pct,0)/g.length):0;
+  const exc     =g.reduce((s,x)=>s+x.overtime.length,0);
+  document.getElementById('s-ot').textContent =totalOT;
+  document.getElementById('s-tec').textContent=totalTec;
+  document.getElementById('s-hrs').textContent=fmtDur(totalW);
+  document.getElementById('s-ocu').textContent=avg+'%';
+  document.getElementById('s-exc').textContent=exc;
 }
 
-// ─── FILTERS ──────────────────────────────────────────
+// ─── FILTERS ─────────────────────────────────────────
 function populateFilters(){
-  if (!ST.result) return;
-  const codes = [...new Set(ST.result.filter(g=>!g.isRest).map(g=>g.code))].sort();
-  ['f-user','cf-user','comp-filter-user'].forEach(id=>{
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">Todos</option>';
-    codes.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
-    if (cur) sel.value = cur;
+  if(!ST.result) return;
+  const codes=[...new Set(ST.result.filter(g=>!g.isRest).map(g=>g.code))].sort();
+  ['f-user','cf-user'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel) return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Todos</option>';
+    codes.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
+    if(cur) sel.value=cur;
   });
 }
-function populateComplianceFilters(){
-  populateFilters();
-  refreshGlobalSummary();
-}
+function populateComplianceFilters(){ populateFilters(); refreshGlobalSummary(); }
 function populatePrintUsers(){
-  if (!ST.result) return;
-  const codes = [...new Set(ST.result.filter(g=>!g.isRest).map(g=>g.code))].sort();
-  const sel = document.getElementById('print-user');
-  sel.innerHTML = '<option value="">— Seleccionar —</option>';
+  if(!ST.result) return;
+  const codes=[...new Set(ST.result.filter(g=>!g.isRest).map(g=>g.code))].sort();
+  const sel=document.getElementById('print-user');
+  sel.innerHTML='<option value="">— Seleccionar —</option>';
   codes.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
 }
 function applyFilter(){
-  if (!ST.result) return;
-  const uf = document.getElementById('f-user').value;
-  const df = document.getElementById('f-date').value;
-  const tf = document.getElementById('f-transit').value;
+  if(!ST.result) return;
+  const uf=document.getElementById('f-user').value;
+  const df=document.getElementById('f-date').value;
+  const tf=document.getElementById('f-transit').value;
   renderCards(ST.result.filter(g=>{
-    if (uf && g.code!==uf) return false;
-    if (df && g.dkey!==df) return false;
+    if(uf&&g.code!==uf) return false;
+    if(df&&g.dkey!==df) return false;
     return true;
-  }), tf==='0');
+  }),tf==='0');
 }
 
-// ─── RENDER CARDS ──────────────────────────────────────
+// ─── RENDER CARDS ─────────────────────────────────────
 function renderCards(groups, hideTransit=false){
-  const grid = document.getElementById('ugrid');
-  grid.innerHTML = '';
-  if (!groups.length){
+  const grid=document.getElementById('ugrid');
+  grid.innerHTML='';
+  if(!groups.length){
     grid.innerHTML='<div class="nodata"><span class="nd-icon">🔍</span><p>Sin resultados.</p></div>';
     return;
   }
   groups.forEach((g,gi)=>{
-    const initials = g.code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
-    const barColor = g.pct>=90?'#ff5263':g.pct>=70?'#ffb830':'#00e5b8';
-    const dateStr  = g.date ? g.date.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}) : g.dkey;
-    const items    = hideTransit ? g.scheduled.filter(s=>s.type!=='transit') : g.scheduled;
+    const initials=g.code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
+    const barColor=g.pct>=90?'#ff5263':g.pct>=70?'#ffb830':'#00e5b8';
+    const dateStr =g.date?g.date.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}):g.dkey;
+    const items   =hideTransit?g.scheduled.filter(s=>s.type!=='transit'):g.scheduled;
+    const taskItems=g.scheduled.filter(s=>s.type==='task');
 
-    const rows = items.map(item=>{
-      if (item.type==='break') return `
+    const rows=items.map(item=>{
+      if(item.type==='break') return `
         <div class="sched-item is-break">
           <div class="si-time">${hhmm(item.startMin)}</div>
           <div class="si-dot" style="background:var(--green);margin-top:4px"></div>
           <div class="si-body"><div class="si-name">${item.name}</div>
             <div class="si-tags"><span class="tag tag-green">45 min</span></div></div>
         </div>`;
-      if (item.type==='transit') return `
+      if(item.type==='transit') return `
         <div class="sched-item is-transit">
           <div class="si-time">${hhmm(item.startMin)}</div>
           <div class="si-dot" style="background:var(--accent3);margin-top:4px"></div>
           <div class="si-body"><div class="si-name">${item.name}</div>
             <div class="si-tags"><span class="tag tag-orange">15 min</span></div></div>
         </div>`;
-      const taskIdx = g.scheduled.filter(s=>s.type==='task').indexOf(item);
-      const ckey = compKey(g.code, g.dkey, taskIdx);
-      const done = !!COMP[ckey];
+      const taskIdx=taskItems.indexOf(item);
+      const ckey=compKey(g.code,g.dkey,taskIdx);
+      const done=!!COMP[ckey];
       return `
-        <div class="sched-item${done?' is-done':''}" data-code="${g.code}" data-dkey="${g.dkey}" data-idx="${taskIdx}">
+        <div class="sched-item${done?' is-done':''}">
           <div class="si-time">${hhmm(item.startMin)}${item.overTime?'<br><span style="font-size:8px;color:var(--accent2)">⚠extra</span>':''}</div>
           <div class="si-dot" style="background:${done?'var(--accent1)':g.color}${item.overTime?';outline:2px solid var(--accent2)':''};margin-top:4px"></div>
           <div class="si-body">
-            <div class="si-name">${item.catalogo||item.equipo||'Tarea'}</div>
+            <div class="si-name">${item.catalogo||item.equipo||item.ot||'Tarea'}</div>
             <div class="si-tags">
-              ${item.equipo   ?`<span class="tag tag-blue">🖥 ${item.equipo}</span>`:''}
-              ${item.sucursal ?`<span class="tag tag-purple">📍 ${item.sucursal}</span>`:''}
-              ${item.ot       ?`<span class="tag tag-green">${item.ot}</span>`:''}
-              ${item.contrato ?`<span class="tag tag-orange">${item.contrato}</span>`:''}
+              ${item.equipo?`<span class="tag tag-blue">🖥 ${item.equipo}</span>`:''}
+              ${item.sucursal?`<span class="tag tag-purple">📍 ${item.sucursal}</span>`:''}
+              ${item.ot?`<span class="tag tag-green">${item.ot}</span>`:''}
+              ${item.contrato?`<span class="tag tag-orange">${item.contrato}</span>`:''}
               <span class="tag tag-muted">⏱ ${fmtDur(item.durMin)}</span>
-              ${item.overTime ?`<span class="tag tag-red">⚠ Excede turno</span>`:''}
+              ${item.overTime?`<span class="tag tag-red">⚠ Excede turno</span>`:''}
             </div>
             <div class="check-wrap" data-ckey="${ckey}" onclick="toggleTask('${g.code}','${g.dkey}',${taskIdx})">
               <div class="check-box${done?' done':''}"></div>
@@ -1477,13 +1396,12 @@ function renderCards(groups, hideTransit=false){
         </div>`;
     }).join('');
 
-    const availMin = Math.max(0, g.totalFree-g.usedWork);
-    const cbId = `cb-${g.code}-${g.dkey}`.replace(/[^a-zA-Z0-9\-]/g,'_');
-    const tasks = g.scheduled.filter(s=>s.type==='task');
-    const doneCnt = tasks.filter((_,i)=>COMP[compKey(g.code,g.dkey,i)]).length;
-    const compPct = tasks.length ? Math.round(doneCnt/tasks.length*100) : 0;
+    const availMin=Math.max(0,g.totalFree-g.usedWork);
+    const cbId=`cb-${g.code}-${g.dkey}`.replace(/[^a-zA-Z0-9\-]/g,'_');
+    const doneCnt=taskItems.filter((_,i)=>COMP[compKey(g.code,g.dkey,i)]).length;
+    const compPct=taskItems.length?Math.round(doneCnt/taskItems.length*100):0;
 
-    const card = document.createElement('div');
+    const card=document.createElement('div');
     card.className='ucard';
     card.style.animationDelay=`${gi*.04}s`;
     card.innerHTML=`
@@ -1500,21 +1418,21 @@ function renderCards(groups, hideTransit=false){
         </div>
       </div>
       ${g.isRest
-        ? `<div class="no-sched-note" style="color:var(--accent1);border-color:rgba(0,229,184,.2);background:rgba(0,229,184,.05)">🛌 Día de DESCANSO</div>`
-        : !g.hasSched
-          ? `<div class="no-sched-note">⚠ Sin horario registrado — usando horario por defecto</div>`
-          : g.overnight
-            ? `<div class="night-note">🌙 Turno nocturno (22:00 – 07:00) · continúa hasta el día siguiente (+1)</div>`
-            : ''}
-      ${g.isRest ? '' : `
+        ?`<div class="no-sched-note" style="color:var(--accent1);border-color:rgba(0,229,184,.2);background:rgba(0,229,184,.05)">🛌 Día de DESCANSO</div>`
+        :!g.hasSched
+          ?`<div class="no-sched-note">⚠ Sin horario registrado — usando distribución por defecto</div>`
+          :g.overnight
+            ?`<div class="night-note">🌙 Turno nocturno (22:00 – 07:00) · continúa hasta el día siguiente</div>`
+            :''}
+      ${g.isRest?'':`
         <div class="day-sched">
           <div class="day-title">Distribución · ${fmtDur(g.usedWork)} trabajo · ${fmtDur(availMin)} libre</div>
-          ${rows||'<div style="color:var(--muted);font-size:11px;padding:10px 0">Sin tareas asignadas</div>'}
+          ${rows||'<div style="color:var(--muted);font-size:11px;padding:10px 0">Sin tareas asignadas para este día</div>'}
         </div>
         <div class="comp-bar" id="${cbId}">
           <span class="comp-label">Cumplimiento</span>
           <div class="comp-bg"><div class="comp-fill" style="width:${compPct}%"></div></div>
-          <span class="comp-val">${doneCnt}/${tasks.length} · ${compPct}%</span>
+          <span class="comp-val">${doneCnt}/${taskItems.length} · ${compPct}%</span>
         </div>
         <div class="avail">
           <div class="avail-head">
@@ -1522,7 +1440,7 @@ function renderCards(groups, hideTransit=false){
             <span style="color:${barColor}">${g.pct}%</span>
           </div>
           <div class="avail-bar"><div class="avail-fill" style="width:${g.pct}%;background:${barColor}"></div></div>
-          <div class="avail-note" style="font-size:9px;color:${g.overtime.length>0?'var(--accent2)':availMin>0?'var(--muted)':'var(--accent1)'}">
+          <div class="avail-note" style="color:${g.overtime.length>0?'var(--accent2)':availMin>0?'var(--muted)':'var(--accent1)'}">
             ${g.overtime.length>0?`⚠ ${g.overtime.length} OT(s) en overtime`:availMin>0?`⏳ Tiempo libre: ${fmtDur(availMin)}`:`✓ Turno completo`}
           </div>
         </div>`}`;
@@ -1532,23 +1450,23 @@ function renderCards(groups, hideTransit=false){
 
 // ─── RENDER MONTHLY ──────────────────────────────────
 function renderMonthly(groups){
-  const mg = document.getElementById('mgrid');
-  mg.innerHTML = '';
-  const byCode = {};
+  const mg=document.getElementById('mgrid');
+  mg.innerHTML='';
+  const byCode={};
   groups.forEach(g=>{
-    if (!byCode[g.code]) byCode[g.code]={code:g.code,color:g.color,days:0,totalWork:0,totalOTs:0,overtime:0};
+    if(!byCode[g.code]) byCode[g.code]={code:g.code,color:g.color,days:0,totalWork:0,totalOTs:0,overtime:0};
     byCode[g.code].days++;
-    byCode[g.code].totalWork += g.usedWork;
-    byCode[g.code].totalOTs  += g.taskCount;
-    byCode[g.code].overtime  += g.overtime.length;
+    byCode[g.code].totalWork+=g.usedWork;
+    byCode[g.code].totalOTs +=g.taskCount;
+    byCode[g.code].overtime +=g.overtime.length;
   });
-  const maxW = Math.max(...Object.values(byCode).map(v=>v.totalWork),1);
+  const maxW=Math.max(...Object.values(byCode).map(v=>v.totalWork),1);
   Object.values(byCode).sort((a,b)=>a.code<b.code?-1:1).forEach(u=>{
-    const pct = Math.round((u.totalWork/maxW)*100);
-    const bc  = u.overtime>0?'#ff5263':pct>80?'#ffb830':'#00e5b8';
-    const card = document.createElement('div');
-    card.className = 'mcard';
-    card.innerHTML = `
+    const pct=Math.round((u.totalWork/maxW)*100);
+    const bc=u.overtime>0?'#ff5263':pct>80?'#ffb830':'#00e5b8';
+    const card=document.createElement('div');
+    card.className='mcard';
+    card.innerHTML=`
       <div class="mcard-title">
         <div style="width:10px;height:10px;border-radius:50%;background:${u.color};flex-shrink:0"></div>
         <span>${u.code}</span>
@@ -1569,78 +1487,77 @@ function renderMonthly(groups){
       </div>`;
     mg.appendChild(card);
   });
+  if(!Object.keys(byCode).length) mg.innerHTML='<div class="nodata"><span class="nd-icon">📅</span><p>Sin datos.</p></div>';
 }
 
-// ─── RENDER TIMELINE ──────────────────────────────────
+// ─── RENDER TIMELINE ─────────────────────────────────
 function renderTimeline(groups){
-  const tbody = document.getElementById('tl-body');
-  tbody.innerHTML = '';
-  const rows = [];
+  const tbody=document.getElementById('tl-body');
+  tbody.innerHTML='';
+  const rows=[];
   groups.forEach(g=>{
-    if (g.isRest) return;
-    g.scheduled.forEach(item => rows.push({...item,code:g.code,date:g.date,dkey:g.dkey,day:g.day,color:g.color}));
+    if(g.isRest) return;
+    g.scheduled.forEach(item=>rows.push({...item,code:g.code,date:g.date,dkey:g.dkey,day:g.day,color:g.color}));
   });
   rows.sort((a,b)=>a.dkey<b.dkey?-1:a.dkey>b.dkey?1:a.startMin-b.startMin);
   rows.forEach(r=>{
-    const tr = document.createElement('tr');
-    if (r.type==='break')   tr.classList.add('row-break');
-    if (r.type==='transit') tr.classList.add('row-transit');
-    const dateStr = r.date ? r.date.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}) : r.dkey;
-    const typeLbl = r.type==='break'?'🍽 Comida':r.type==='transit'?'🚶 Tránsito':'🔧 Tarea';
-    const actLbl  = r.type==='task'?(r.catalogo||r.equipo||'Tarea'):(r.name||'—');
+    const tr=document.createElement('tr');
+    if(r.type==='break')   tr.classList.add('row-break');
+    if(r.type==='transit') tr.classList.add('row-transit');
+    const dateStr=r.date?r.date.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}):r.dkey;
+    const typeLbl=r.type==='break'?'🍽 Comida':r.type==='transit'?'🚶 Tránsito':'🔧 Tarea';
+    const actLbl =r.type==='task'?(r.catalogo||r.equipo||r.ot||'Tarea'):(r.name||'—');
     tr.innerHTML=`
       <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${r.color};margin-right:7px;vertical-align:middle"></span>${r.code}</td>
       <td>${dateStr}</td><td>${r.day}</td>
       <td style="color:var(--accent1);font-weight:500">${hhmmPlain(r.startMin)}</td>
       <td style="color:${r.type==='task'&&r.overTime?'var(--accent2)':'var(--accent1)'};font-weight:500">${hhmmPlain(r.endMin)}</td>
-      <td><span class="tag tag-red" style="background:rgba(255,82,99,.08)">${fmtDur(r.durMin)}</span></td>
+      <td><span class="tag tag-muted">${fmtDur(r.durMin)}</span></td>
       <td>${typeLbl}</td><td>${actLbl}</td>
       <td>${r.equipo||'—'}</td><td>${r.ot||'—'}</td><td>${r.sucursal||'—'}</td>
       <td>${r.type==='task'?`<span class="tag ${r.overTime?'tag-red':'tag-green'}">${r.overTime?'⚠ Overtime':'✓ En turno'}</span>`:'—'}</td>`;
     tbody.appendChild(tr);
   });
-  if (!rows.length) tbody.innerHTML='<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:40px">Sin datos</td></tr>';
+  if(!rows.length) tbody.innerHTML='<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:40px">Sin datos</td></tr>';
 }
 
-// ─── COMPLIANCE PANEL ─────────────────────────────────
+// ─── COMPLIANCE PANEL ────────────────────────────────
 function renderCompliancePanel(){
-  if (!ST.result) return;
-  const codeF = document.getElementById('cf-user')?.value||'';
-  const dateF = document.getElementById('cf-date')?.value||'';
+  if(!ST.result) return;
+  const codeF=document.getElementById('cf-user')?.value||'';
+  const dateF=document.getElementById('cf-date')?.value||'';
   populateFilters();
-  const grid = document.getElementById('comp-grid');
-  grid.innerHTML = '';
-  const groups = ST.result.filter(g=>{
-    if (g.isRest) return false;
-    if (codeF && g.code!==codeF) return false;
-    if (dateF && g.dkey!==dateF) return false;
-    return (g.scheduled||[]).filter(s=>s.type==='task').length > 0;
+  const grid=document.getElementById('comp-grid');
+  grid.innerHTML='';
+  const groups=ST.result.filter(g=>{
+    if(g.isRest) return false;
+    if(codeF&&g.code!==codeF) return false;
+    if(dateF&&g.dkey!==dateF) return false;
+    return (g.scheduled||[]).filter(s=>s.type==='task').length>0;
   });
-  if (!groups.length){
+  if(!groups.length){
     grid.innerHTML='<div class="nodata"><span class="nd-icon">🔍</span><p>Sin resultados.</p></div>';
-    return;
+    refreshGlobalSummary(); return;
   }
   groups.forEach(g=>{
-    const tasks = g.scheduled.filter(s=>s.type==='task');
-    const initials = g.code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
-    const dateStr  = g.date ? g.date.toLocaleDateString('es-PE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : g.dkey;
-    const doneCount= tasks.filter((_,i)=>COMP[compKey(g.code,g.dkey,i)]).length;
-    const pct      = tasks.length ? Math.round(doneCount/tasks.length*100) : 0;
-    const cbId     = `cb-${g.code}-${g.dkey}`.replace(/[^a-zA-Z0-9\-]/g,'_');
-
-    const taskRows = tasks.map((t,i)=>{
-      const key  = compKey(g.code,g.dkey,i);
-      const done = !!COMP[key];
+    const tasks=g.scheduled.filter(s=>s.type==='task');
+    const initials=g.code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
+    const dateStr=g.date?g.date.toLocaleDateString('es-PE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):g.dkey;
+    const doneCount=tasks.filter((_,i)=>COMP[compKey(g.code,g.dkey,i)]).length;
+    const pct=tasks.length?Math.round(doneCount/tasks.length*100):0;
+    const cbId=`cb-${g.code}-${g.dkey}`.replace(/[^a-zA-Z0-9\-]/g,'_');
+    const taskRows=tasks.map((t,i)=>{
+      const key=compKey(g.code,g.dkey,i); const done=!!COMP[key];
       return `
-        <div class="sched-item${done?' is-done':''}" style="grid-template-columns:54px 14px 1fr auto;gap:0 10px">
+        <div class="sched-item${done?' is-done':''}">
           <div class="si-time">${hhmmPlain(t.startMin)}</div>
-          <div class="si-dot" style="background:${done?'var(--accent1)':g.color};margin-top:4px;width:9px;height:9px;border-radius:50%;flex-shrink:0"></div>
+          <div class="si-dot" style="background:${done?'var(--accent1)':g.color};margin-top:4px"></div>
           <div class="si-body">
-            <div class="si-name">${t.catalogo||t.equipo||'Tarea'}</div>
+            <div class="si-name">${t.catalogo||t.equipo||t.ot||'Tarea'}</div>
             <div class="si-tags">
-              ${t.equipo   ?`<span class="tag tag-blue">🖥 ${t.equipo}</span>`:''}
-              ${t.sucursal ?`<span class="tag tag-purple">📍 ${t.sucursal}</span>`:''}
-              ${t.ot       ?`<span class="tag tag-green">${t.ot}</span>`:''}
+              ${t.equipo?`<span class="tag tag-blue">🖥 ${t.equipo}</span>`:''}
+              ${t.sucursal?`<span class="tag tag-purple">📍 ${t.sucursal}</span>`:''}
+              ${t.ot?`<span class="tag tag-green">${t.ot}</span>`:''}
               <span class="tag tag-muted">⏱ ${fmtDur(t.durMin)}</span>
             </div>
             <div class="check-wrap" data-ckey="${key}" onclick="toggleTask('${g.code}','${g.dkey}',${i})">
@@ -1648,21 +1565,14 @@ function renderCompliancePanel(){
               <span class="check-label${done?' done':''}">${done?'✓ Completado':'Marcar como completado'}</span>
             </div>
           </div>
-          <div style="padding-top:2px;font-size:9px;color:${t.overTime?'var(--accent2)':'var(--muted)'}">
-            ${hhmmPlain(t.endMin)}${t.overTime?' ⚠':''}
-          </div>
         </div>`;
     }).join('');
-
-    const card = document.createElement('div');
+    const card=document.createElement('div');
     card.className='ucard';
     card.innerHTML=`
       <div class="uhead">
         <div class="avatar" style="background:${g.color}">${initials}</div>
-        <div class="uinfo">
-          <h3>${g.code}</h3>
-          <p>${g.day} · ${dateStr}</p>
-        </div>
+        <div class="uinfo"><h3>${g.code}</h3><p>${g.day} · ${dateStr}</p></div>
         <span class="tag" style="margin-left:auto;background:${g.color}18;color:${g.color};border:1px solid ${g.color}35">${tasks.length} tarea(s)</span>
       </div>
       <div class="day-sched">
@@ -1680,26 +1590,25 @@ function renderCompliancePanel(){
   refreshGlobalSummary();
 }
 
-// ─── PRINT ────────────────────────────────────────────
+// ─── PRINT ───────────────────────────────────────────
 function renderPrintPreview(){
-  if (!ST.result) return;
-  const code = document.getElementById('print-user').value;
-  document.getElementById('print-nodata').style.display = code?'none':'block';
-  document.getElementById('print-preview').style.display= code?'block':'none';
-  if (!code) return;
-  const cards = document.getElementById('print-cards');
-  cards.innerHTML = '';
+  if(!ST.result) return;
+  const code=document.getElementById('print-user').value;
+  document.getElementById('print-nodata').style.display=code?'none':'block';
+  document.getElementById('print-preview').style.display=code?'block':'none';
+  if(!code) return;
+  const cards=document.getElementById('print-cards');
+  cards.innerHTML='';
   ST.result.filter(g=>g.code===code&&!g.isRest).forEach(g=>{
-    const tasks = (g.scheduled||[]).filter(s=>s.type==='task');
-    if (!tasks.length) return;
+    const tasks=(g.scheduled||[]).filter(s=>s.type==='task');
+    if(!tasks.length) return;
     cards.appendChild(buildPreviewCard(g,tasks));
   });
 }
-
 function buildPreviewCard(g,tasks){
-  const dateStr  = g.date ? g.date.toLocaleDateString('es-PE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : g.dkey;
-  const initials = g.code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
-  const rows = tasks.map(t=>`
+  const dateStr=g.date?g.date.toLocaleDateString('es-PE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):g.dkey;
+  const initials=g.code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
+  const rows=tasks.map(t=>`
     <tr>
       <td style="color:var(--accent1);font-weight:600">${hhmmPlain(t.startMin)}</td>
       <td style="color:${t.overTime?'var(--accent2)':'var(--accent1)'};">${hhmmPlain(t.endMin)}</td>
@@ -1711,7 +1620,7 @@ function buildPreviewCard(g,tasks){
       <td>${t.contrato||'—'}</td>
       <td><span class="tag ${t.overTime?'tag-red':'tag-green'}">${t.overTime?'⚠ Overtime':'✓ En turno'}</span></td>
     </tr>`).join('');
-  const wrap = document.createElement('div');
+  const wrap=document.createElement('div');
   wrap.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;';
   wrap.innerHTML=`
     <div style="padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
@@ -1736,36 +1645,33 @@ function buildPreviewCard(g,tasks){
     </div>`;
   return wrap;
 }
-
 function doPrint(){
-  const code = document.getElementById('print-user').value;
-  if (!code) return alert('Selecciona un colaborador');
+  const code=document.getElementById('print-user').value;
+  if(!code){alert('Selecciona un colaborador');return;}
   openPrintWindow(code, ST.result.filter(g=>g.code===code&&!g.isRest));
 }
 function doPrintAll(){
-  if (!ST.result) return alert('Sin datos');
+  if(!ST.result){alert('Sin datos');return;}
   openPrintWindow('TODOS', ST.result.filter(g=>!g.isRest));
 }
 function printSingleDay(code,dkey){
   openPrintWindow(code+' · '+dkey, ST.result.filter(g=>g.code===code&&g.dkey===dkey&&!g.isRest));
 }
-
 function openPrintWindow(title, groups){
-  const byCode = {};
+  const byCode={};
   groups.forEach(g=>{
-    const tasks = (g.scheduled||[]).filter(s=>s.type==='task');
-    if (!tasks.length) return;
-    if (!byCode[g.code]) byCode[g.code]=[];
+    const tasks=(g.scheduled||[]).filter(s=>s.type==='task');
+    if(!tasks.length) return;
+    if(!byCode[g.code]) byCode[g.code]=[];
     byCode[g.code].push({...g,tasks});
   });
-  if (!Object.keys(byCode).length) return alert('No hay tareas para imprimir');
-
-  const sections = Object.entries(byCode).map(([code,days])=>{
-    const initials = code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
-    const dayBlocks = days.map(g=>{
-      const dateStr = g.date ? g.date.toLocaleDateString('es-PE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : g.dkey;
-      const rows = g.tasks.map((t,idx)=>{
-        const done = !!COMP[compKey(g.code,g.dkey,idx)];
+  if(!Object.keys(byCode).length){alert('No hay tareas para imprimir');return;}
+  const sections=Object.entries(byCode).map(([code,days])=>{
+    const initials=code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
+    const dayBlocks=days.map(g=>{
+      const dateStr=g.date?g.date.toLocaleDateString('es-PE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):g.dkey;
+      const rows=g.tasks.map((t,idx)=>{
+        const done=!!COMP[compKey(g.code,g.dkey,idx)];
         return `<tr class="${idx%2===0?'even':'odd'}${done?' row-done':''}">
           <td>${done?'<span class="chk-done">&#10003;</span>':'<span class="chk-empty"></span>'}</td>
           <td class="time">${hhmmPlain(t.startMin)}</td>
@@ -1791,8 +1697,7 @@ function openPrintWindow(title, groups){
         <div><h2>${code}</h2><p>${days.length} día(s) · ${days.reduce((s,g)=>s+g.tasks.length,0)} tarea(s)</p></div>
       </div>${dayBlocks}</div>`;
   }).join('<div class="page-break"></div>');
-
-  const w = window.open('','_blank','width=1000,height=750');
+  const w=window.open('','_blank','width=1000,height=750');
   w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Horario — ${title}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -1825,7 +1730,7 @@ td.time{color:#007a5e;font-weight:600;white-space:nowrap;}td.dur{color:#555;}td.
 <div class="doc-header"><div><h1>🔧 Horario de Trabajo — Holiday Inn</h1><p>${title}</p></div><div class="badge">Generado: ${new Date().toLocaleString('es-PE')}</div></div>
 ${sections}
 <div class="doc-footer">WorkScheduler OT · Holiday Inn · ${new Date().toLocaleString('es-PE')}</div>
-<script>window.onload=function(){window.print();}<\/script></body></html>`);
+<script>window.onload=function(){window.print();};<\/script></body></html>`);
   w.document.close();
 }
 </script>
