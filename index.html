@@ -420,36 +420,67 @@ tr:last-child td{border-bottom:none;}
       </div>
     </div>
     <div id="adm-p1" style="display:none">
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">
-        <div class="fgroup" style="flex:1;max-width:200px">
-          <label>Técnico</label>
-          <select id="sch-user-sel" onchange="loadScheduleTable()"><option value="">— Seleccionar —</option></select>
-        </div>
-        <div class="fgroup" style="flex:1;max-width:160px">
-          <label>Mes / Año</label>
-          <input type="month" id="sch-month-sel" onchange="loadScheduleTable()">
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="addScheduleRow()">+ Agregar fila</button>
-        <button class="btn btn-primary btn-sm" id="btn-save-sched" onclick="saveScheduleTable()">💾 Guardar horarios</button>
-      </div>
-      <!-- ══════════════════════════════════════════════════════
-           DESCRIPCIÓN DE TURNOS — ACTUALIZADA CON 4 TURNOS
-           ══════════════════════════════════════════════════════ -->
-      <div style="font-size:10px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-        Turnos: <code style="color:var(--accent5)">22:00 – 07:00</code> (nocturno) &nbsp;·&nbsp;
-        <code style="color:var(--accent4)">13:00 – 22:00</code> (tarde) &nbsp;·&nbsp;
-        <code style="color:var(--accent1)">09:00 – 18:00</code> (intermedio) &nbsp;·&nbsp;
-        <code style="color:var(--green)">07:00 – 16:00</code> (mañana) &nbsp;·&nbsp;
-        <code style="color:var(--muted)">DESCANSO</code>
-      </div>
-      <div class="sched-matrix">
-        <table>
-          <thead><tr><th>Fecha</th><th>Día</th><th>Turno</th><th></th></tr></thead>
-          <tbody id="sched-tbody"></tbody>
-        </table>
-      </div>
+  <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:0;
+              padding:0 0 14px;border-bottom:1px solid var(--border);">
+    <div class="fgroup" style="flex:1;max-width:220px">
+      <label>Técnico</label>
+      <select id="sch-user-sel" onchange="loadScheduleTable()">
+        <option value="">— Seleccionar técnico —</option>
+      </select>
     </div>
+    <div class="fgroup" style="max-width:160px">
+      <label>Mes / Año</label>
+      <input type="month" id="sch-month-sel" onchange="loadScheduleTable()">
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="addScheduleRow()">+ Fila manual</button>
+    <button class="btn btn-primary btn-sm" id="btn-save-sched"
+            onclick="saveScheduleTable()" style="margin-left:auto">
+      💾 Guardar horarios
+    </button>
   </div>
+
+  <!-- Leyenda de turnos -->
+  <div style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 0;
+              border-bottom:1px solid var(--border);margin-bottom:10px;">
+    <span style="font-size:9px;color:var(--muted);letter-spacing:1px;
+                 text-transform:uppercase;align-self:center">Turnos:</span>
+    <span style="font-size:9px;color:var(--green);display:flex;align-items:center;gap:5px">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--green);
+                   display:inline-block"></span>Mañana 07–16</span>
+    <span style="font-size:9px;color:var(--accent1);display:flex;align-items:center;gap:5px">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--accent1);
+                   display:inline-block"></span>Intermedio 09–18</span>
+    <span style="font-size:9px;color:var(--accent4);display:flex;align-items:center;gap:5px">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--accent4);
+                   display:inline-block"></span>Tarde 13–22</span>
+    <span style="font-size:9px;color:var(--accent5);display:flex;align-items:center;gap:5px">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--accent5);
+                   display:inline-block"></span>Noche 22–07</span>
+    <span style="font-size:9px;color:var(--accent3);display:flex;align-items:center;gap:5px">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--accent3);
+                   display:inline-block"></span>Descanso</span>
+  </div>
+
+  <div class="sched-matrix">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:100px">Fecha</th>
+          <th style="width:90px">Día</th>
+          <th style="width:130px">Horario actual</th>
+          <th style="min-width:180px">Turno asignado</th>
+          <th style="width:130px">Nombre turno</th>
+          <th style="width:40px"></th>
+        </tr>
+      </thead>
+      <tbody id="sched-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Resumen al pie -->
+  <div id="sched-summary" style="display:flex;gap:16px;flex-wrap:wrap;
+       padding:10px 0;margin-top:10px;border-top:1px solid var(--border);font-size:10px;
+       color:var(--muted)"></div>
 </div>
 
 <!-- USER MODAL -->
