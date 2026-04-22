@@ -11,8 +11,10 @@
   --bg:#080c14;--surface:#0f1623;--surface2:#161f30;--surface3:#1c2840;
   --border:#1e2d42;--border2:#243350;
   --accent1:#00e5b8;--accent2:#ff5263;--accent3:#ffb830;--accent4:#4db8ff;--accent5:#b06eff;
-  --green:#2effaa;--text:#cdd8e8;--muted:#4a6278;--radius:14px;
+  --green:#2effaa;--text:#cdd8e8;--muted:#6b849c;--radius:16px;
   --font-head:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+  --shadow:0 8px 30px rgba(0,0,0,0.5);
+  --glass:rgba(15, 22, 35, 0.7);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -41,10 +43,10 @@ header::after{
 #h-status.ok{color:var(--accent1);}#h-status.err{color:var(--accent2);}
 .nav{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin:20px 32px 0;width:fit-content;position:relative;z-index:1;}
 .nav-btn{padding:7px 18px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:var(--font-head);font-weight:700;font-size:px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.nav-btn.active{background:var(--accent1);color:#080c14;}
+.nav-btn.active{background:var(--accent1);color:#080c14;box-shadow:0 0 15px rgba(0,229,184,0.3);}
 .nav-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
 .nav-btn.admin-tab{color:var(--accent3);}
-.nav-btn.admin-tab.active{background:var(--accent3);color:#080c14;}
+.nav-btn.admin-tab.active{background:var(--accent3);color:#080c14;box-shadow:0 0 15px rgba(255,184,48,0.3);}
 main{padding:24px 32px 60px;max-width:1800px;margin:0 auto;position:relative;z-index:1;}
 .panel{display:none;animation:fadeUp .3s ease both;}
 .panel.active{display:block;}
@@ -52,10 +54,10 @@ main{padding:24px 32px 60px;max-width:1800px;margin:0 auto;position:relative;z-i
 .stitle{font-family:var(--font-head);font-size:22px;font-weight:800;margin-bottom:4px;}
 .stitle em{color:var(--accent1);font-style:normal;}
 .ssub{color:var(--muted);font-size:px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-.card-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:px;}
-.card-head h3{font-family:var(--font-head);font-weight:700;font-size:13px;flex:1;}
-.card-body{padding:20px;}
+.card{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.02);}
+.card-head h3{font-family:var(--font-head);font-weight:700;font-size:14px;flex:1;letter-spacing:0.5px;}
+.card-body{padding:24px;}
 .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
 .scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;position:relative;overflow:hidden;cursor:default;transition:transform .2s,border-color .2s;}
 .scard:hover{transform:translateY(-2px);border-color:var(--border2);}
@@ -114,8 +116,10 @@ tr:last-child td{border-bottom:none;}
 .filter-bar select,.filter-bar input{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-family:var(--font-mono);font-size:11px;outline:none;transition:border-color .2s;}
 .filter-bar select:hover,.filter-bar input:hover{border-color:var(--accent1);}
 .ugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:20px;}
-.ucard{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:box-shadow .3s,transform .2s;}
-.ucard:hover{box-shadow:0 8px 40px rgba(0,0,0,.6);transform:translateY(-2px);}
+.ucard{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);position:relative;}
+.ucard:hover{box-shadow:0 12px 40px rgba(0,0,0,0.7);transform:translateY(-4px);border-color:var(--border2);}
+.ucard.continuation{border-style:dashed;opacity:0.95;}
+.ucard.continuation::after{content:'🌙';position:absolute;top:10px;right:10px;font-size:14px;opacity:0.5;}
 .uhead{padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
 .avatar{width:42px;height:42px;border-radius:px;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-weight:800;font-size:12px;color:#080c14;flex-shrink:0;}
 .uinfo h3{font-family:var(--font-head);font-size:13px;font-weight:700;}
@@ -481,6 +485,7 @@ tr:last-child td{border-bottom:none;}
       </div>
       <button class="btn btn-purple" onclick="doPrint()">🖨 Imprimir seleccionado</button>
       <button class="btn btn-secondary" onclick="doPrintAll()">🖨 Imprimir todos</button>
+      <button class="btn btn-primary" onclick="exportToExcel()">📊 Exportar Horario (XLSX)</button>
     </div>
     <div id="print-preview" style="display:none">
       <div style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Vista previa</div>
@@ -1217,7 +1222,7 @@ function handleOTFile(event) {
         }
         durMin = Math.max(15, Math.min(durMin, 480));
 
-        const catalogo = String(row[9]||row[10]||'').trim();  // COLUMNA 39 ✅
+        const catalogo = String(row[38]||'').trim();  // COLUMNA 39 (índice 38) ✅
         const contrato = String(row[11]||row[12]||'').trim();
 
         _processedOTs.push({
@@ -1374,12 +1379,35 @@ function buildDistribution() {
       const dayTasks  = isLastDay ? remaining : remaining.slice(0, fittingCount);
       const leftover  = isLastDay ? [] : remaining.slice(fittingCount);
       const result    = assignTasks(sched.start, sched.end, dayTasks.map(t=>({...t})));
-      allGroups.push({
+      
+      const groupData = {
         code,color,uName:uInfo?.nombre||code,date:sched.date,dkey:sched.dateKey,
         day:sched.day,slotStart:sched.start,slotEnd:sched.end,
         hasSched:true,isRest:false,overnight:sched.overnight||false,
         ...result,taskCount:dayTasks.length,otItems:dayTasks,
-      });
+      };
+      allGroups.push(groupData);
+
+      // 🌙 Lógica de continuación para el día siguiente si es turno nocturno
+      if (sched.overnight) {
+        const nextDate = new Date(sched.date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        const nextDKey = dkStr(nextDate);
+        const nextDayName = DAYS_ES[nextDate.getDay()];
+        
+        // Identificamos las tareas que ocurren después de las 24:00 (1440 min)
+        const continuations = result.scheduled.filter(s => s.endMin > 1440);
+        if (continuations.length > 0) {
+          allGroups.push({
+            code, color, uName: uInfo?.nombre||code, date: nextDate, dkey: nextDKey,
+            day: nextDayName, isContinuation: true, originalDKey: sched.dateKey,
+            scheduled: continuations.map(c => ({...c, isContinuation: true})),
+            taskCount: continuations.filter(c => c.type === 'task').length,
+            isRest: false, hasSched: true
+          });
+        }
+      }
+
       remaining = leftover;
     });
 
@@ -1601,6 +1629,37 @@ function renderCards(groups, hideTransit=false){
     const dateStr =g.date?g.date.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}):g.dkey;
     const items   =hideTransit?g.scheduled.filter(s=>s.type!=='transit'):g.scheduled;
     const taskItems=g.scheduled.filter(s=>s.type==='task');
+
+    if (g.isContinuation) {
+      const card = document.createElement('div');
+      card.className = 'ucard continuation';
+      card.style.borderLeft = `4px solid ${g.color}`;
+      card.style.background = `rgba(0, 0, 0, 0.2)`;
+      card.innerHTML = `
+        <div class="uhead" style="padding: 10px 15px; background: rgba(0,0,0,0.1)">
+          <div class="avatar" style="width:30px;height:30px;font-size:10px;background:${g.color}">${initials}</div>
+          <div class="uinfo">
+            <h3 style="font-size:11px">${g.code} <small style="color:var(--accent1)">[CONTINUACIÓN]</small></h3>
+            <p style="font-size:9px">${g.day} · ${dateStr}</p>
+          </div>
+        </div>
+        <div class="day-sched" style="padding: 10px 15px">
+          <div class="day-title" style="font-size:8px;color:var(--accent5)">🌙 Término de turno anterior</div>
+          ${items.map(item => `
+            <div class="sched-item" style="opacity: 0.8; border-bottom-color: rgba(255,255,255,0.05)">
+              <div class="si-time" style="color:var(--accent5)">${hhmm(item.startMin)}</div>
+              <div class="si-dot" style="background:var(--accent5);width:6px;height:6px;margin-top:5px"></div>
+              <div class="si-body">
+                <div class="si-name" style="font-size:11px;color:var(--text)">${item.catalogo||item.equipo||item.ot||item.name||'Tarea'}</div>
+                <div class="si-tags">${item.ot?`<span class="tag tag-muted" style="font-size:8px">${item.ot}</span>`:''}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      grid.appendChild(card);
+      return;
+    }
 
     const rows=items.map(item=>{
       if(item.type==='break') return `
@@ -1906,6 +1965,7 @@ function printSingleDay(code,dkey){
 function openPrintWindow(title, groups){
   const byCode={};
   groups.forEach(g=>{
+    if (g.isContinuation) return; // No imprimir bloques de continuación por separado
     const tasks=(g.scheduled||[]).filter(s=>s.type==='task');
     if(!tasks.length) return;
     if(!byCode[g.code]) byCode[g.code]=[];
@@ -1978,6 +2038,54 @@ ${sections}
 <div class="doc-footer">WorkScheduler OT · Holiday Inn · ${new Date().toLocaleString('es-PE')}</div>
 <script>window.onload=function(){window.print();};<\/script></body></html>`);
   w.document.close();
+}
+
+// ─── EXCEL EXPORT ─────────────────────────────────────
+function exportToExcel() {
+  if (!ST.result) { alert('No hay datos para exportar. Carga las OTs primero.'); return; }
+  const code = document.getElementById('print-user').value;
+  const groups = code ? ST.result.filter(g => g.code === code && !g.isRest && !g.isContinuation) 
+                      : ST.result.filter(g => !g.isRest && !g.isContinuation);
+  
+  const data = [];
+  // Cabecera
+  data.push(["Colaborador", "Fecha", "Día", "Inicio", "Fin", "Duración", "Actividad", "Equipo", "Ubicación", "OT", "Contrato", "Estado"]);
+  
+  groups.forEach(g => {
+    const tasks = g.scheduled.filter(s => s.type === 'task');
+    const dateStr = g.date ? g.date.toLocaleDateString('es-PE') : g.dkey;
+    tasks.forEach(t => {
+      data.push([
+        g.code,
+        dateStr,
+        g.day,
+        hhmmPlain(t.startMin),
+        hhmmPlain(t.endMin),
+        fmtDur(t.durMin),
+        t.catalogo || t.equipo || 'Tarea',
+        t.equipo || '',
+        t.sucursal || '',
+        t.ot || '',
+        t.contrato || '',
+        t.overTime ? 'Overtime' : 'En turno'
+      ]);
+    });
+  });
+  
+  if (data.length <= 1) { alert('No hay actividades (OTs) para exportar.'); return; }
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Horario de Trabajo");
+  
+  // Ajustar anchos de columna básicos
+  const wscols = [
+    {wch:15}, {wch:12}, {wch:10}, {wch:8}, {wch:8}, {wch:12}, 
+    {wch:30}, {wch:25}, {wch:25}, {wch:15}, {wch:15}, {wch:12}
+  ];
+  ws['!cols'] = wscols;
+
+  XLSX.writeFile(wb, `Horario_${code || 'General'}_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 </script>
 </body>
