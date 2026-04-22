@@ -1174,14 +1174,10 @@ function handleOTFile(event) {
       otLog('ok', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
 
       const colInfo = [];
-      if (numCols >= 1)  colInfo.push(`Col.1 (Usuario): "${String(firstRow[0]||'').substring(0,30)}"`);
-      if (numCols >= 28) colInfo.push(`Col.28 (OT parte 1): "${String(firstRow[27]||'').substring(0,30)}"`);
-      if (numCols >= 29) colInfo.push(`Col.29 (OT parte 2): "${String(firstRow[28]||'').substring(0,30)}"`);
-      if (numCols >= 7)  colInfo.push(`Col.7 (Duración): "${String(firstRow[6]||'').substring(0,20)}"`);
-      if (numCols >= 81) colInfo.push(`Col.81 (Equipo): "${String(firstRow[80]||'').substring(0,30)}"`);
-      if (numCols >= 86) colInfo.push(`Col.86 (Ubicación): "${String(firstRow[85]||'').substring(0,30)}"`);
+      if (numCols >= 39) colInfo.push(`Col.39 (Catálogo): "${String(firstRow[38]||'').substring(0,30)}"`);
       infoEl.innerHTML = '<b>Columnas detectadas (fila 1):</b><br>' + colInfo.join('<br>');
       infoEl.style.display = 'block';
+      otLog('info', `📏 Columnas detectadas: ${numCols}`);
 
       const isHeader = /^(usuario|user|codigo|tecnico|empleado|col|#)/i.test(String(firstRow[0]||'').trim()) ||
                        (firstRow[0]==='' && firstRow.some(v=>v!==''));
@@ -1495,6 +1491,7 @@ function parseDate(v){
 function dkStr(d){
   if(!d) return '';
   const dt=d instanceof Date?d:new Date(d);
+  if(isNaN(dt.getTime())) return 'fecha-invalida';
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 function parseSchedule(str){
@@ -1628,8 +1625,8 @@ function renderCards(groups, hideTransit=false){
     const initials=g.code.split(/[\.\-_]+/).filter(Boolean).map(p=>p[0]||'').join('').slice(0,3).toUpperCase();
     const barColor=g.pct>=90?'#ff5263':g.pct>=70?'#ffb830':'#00e5b8';
     const dateStr =g.date?g.date.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}):g.dkey;
-    const items   =hideTransit?g.scheduled.filter(s=>s.type!=='transit'):g.scheduled;
-    const taskItems=g.scheduled.filter(s=>s.type==='task');
+    const items   =(g.scheduled||[]).filter(s => hideTransit ? s.type!=='transit' : true);
+    const taskItems=(g.scheduled||[]).filter(s=>s.type==='task');
 
     if (g.isContinuation) {
       const card = document.createElement('div');
@@ -1762,9 +1759,9 @@ function renderMonthly(groups){
   groups.forEach(g=>{
     if(!byCode[g.code]) byCode[g.code]={code:g.code,color:g.color,days:0,totalWork:0,totalOTs:0,overtime:0};
     byCode[g.code].days++;
-    byCode[g.code].totalWork+=g.usedWork;
-    byCode[g.code].totalOTs +=g.taskCount;
-    byCode[g.code].overtime +=g.overtime.length;
+    byCode[g.code].totalWork+=(g.usedWork||0);
+    byCode[g.code].totalOTs +=(g.taskCount||0);
+    byCode[g.code].overtime +=(g.overtime?g.overtime.length:0);
   });
   const maxW=Math.max(...Object.values(byCode).map(v=>v.totalWork),1);
   Object.values(byCode).sort((a,b)=>a.code<b.code?-1:1).forEach(u=>{
@@ -1802,7 +1799,7 @@ function renderTimeline(groups){
   tbody.innerHTML='';
   const rows=[];
   groups.forEach(g=>{
-    if(g.isRest) return;
+    if(g.isRest || !g.scheduled) return;
     g.scheduled.forEach(item=>rows.push({...item,code:g.code,date:g.date,dkey:g.dkey,day:g.day,color:g.color}));
   });
   rows.sort((a,b)=>a.dkey<b.dkey?-1:a.dkey>b.dkey?1:a.startMin-b.startMin);
