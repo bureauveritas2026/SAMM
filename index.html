@@ -1169,7 +1169,7 @@ function handleOTFile(event) {
       const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
       if (!raw.length) { otLog('err','✗ El archivo está vacío'); return; }
 
-      const firstRow = raw[0];
+      const firstRow = raw[0] || [];
       const numCols  = firstRow.length;
       otLog('ok', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
 
@@ -1403,7 +1403,8 @@ function buildDistribution() {
             day: nextDayName, isContinuation: true, originalDKey: sched.dateKey,
             scheduled: continuations.map(c => ({...c, isContinuation: true})),
             taskCount: continuations.filter(c => c.type === 'task').length,
-            isRest: false, hasSched: true
+            isRest: false, hasSched: true,
+            overtime: [], usedWork: 0, pct: 0 // Propiedades por defecto para evitar errores
           });
         }
       }
@@ -1570,11 +1571,11 @@ function refreshGlobalSummary(){
 
 // ─── RENDER STATS ─────────────────────────────────────
 function renderStats(g){
-  const totalOT =g.reduce((s,x)=>s+x.taskCount,0);
+  const totalOT =g.reduce((s,x)=>s+(x.taskCount||0),0);
   const totalTec=new Set(g.map(x=>x.code)).size;
-  const totalW  =g.reduce((s,x)=>s+x.usedWork,0);
-  const avg     =g.length?Math.round(g.reduce((s,x)=>s+x.pct,0)/g.length):0;
-  const exc     =g.reduce((s,x)=>s+x.overtime.length,0);
+  const totalW  =g.reduce((s,x)=>s+(x.usedWork||0),0);
+  const avg     =g.length?Math.round(g.reduce((s,x)=>s+(x.pct||0),0)/g.length):0;
+  const exc     =g.reduce((s,x)=>s+(x.overtime?x.overtime.length:0),0);
   document.getElementById('s-ot').textContent =totalOT;
   document.getElementById('s-tec').textContent=totalTec;
   document.getElementById('s-hrs').textContent=fmtDur(totalW);
