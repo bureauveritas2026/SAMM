@@ -376,7 +376,7 @@ tr:last-child td{border-bottom:none;}
         <div class="card-body">
           <p style="font-size:px;color:var(--muted);margin-bottom:14px;line-height:1.7">
             Sube el Excel de OTs. El sistema detecta automáticamente las columnas.<br>
-            <b style="color:var(--accent3)">Columnas esperadas:</b> Col.1→Usuario · Col.28-29→Código OT · Col.81→Equipo · Col.86→Ubicación
+            <b style="color:var(--accent3)">Columnas esperadas:</b> Col.1→Usuario · Col.28-29→OT · Col.39→Catálogo · Col.81→Equipo · Col.86→Ubicación
           </p>
           <div class="upload-area" id="ot-dropzone">
             <input type="file" id="ot-file" accept=".xlsx,.xls" onchange="handleOTFile(event)">
@@ -1174,7 +1174,13 @@ function handleOTFile(event) {
       otLog('ok', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
 
       const colInfo = [];
+      if (numCols >= 1)  colInfo.push(`Col.1 (Usuario): "${String(firstRow[0]||'').substring(0,30)}"`);
+      if (numCols >= 28) colInfo.push(`Col.28 (OT parte 1): "${String(firstRow[27]||'').substring(0,30)}"`);
+      if (numCols >= 29) colInfo.push(`Col.29 (OT parte 2): "${String(firstRow[28]||'').substring(0,30)}"`);
       if (numCols >= 39) colInfo.push(`Col.39 (Catálogo): "${String(firstRow[38]||'').substring(0,30)}"`);
+      if (numCols >= 7)  colInfo.push(`Col.7 (Duración): "${String(firstRow[6]||'').substring(0,20)}"`);
+      if (numCols >= 81) colInfo.push(`Col.81 (Equipo): "${String(firstRow[80]||'').substring(0,30)}"`);
+      if (numCols >= 86) colInfo.push(`Col.86 (Ubicación): "${String(firstRow[85]||'').substring(0,30)}"`);
       infoEl.innerHTML = '<b>Columnas detectadas (fila 1):</b><br>' + colInfo.join('<br>');
       infoEl.style.display = 'block';
       otLog('info', `📏 Columnas detectadas: ${numCols}`);
