@@ -1217,7 +1217,7 @@ function handleOTFile(event) {
         }
         durMin = Math.max(15, Math.min(durMin, 480));
 
-        const catalogo = String(row[38]||row[39]||'').trim();  // COLUMNA 39 ✅
+        const catalogo = String(row[9]||row[10]||'').trim();  // COLUMNA 39 ✅
         const contrato = String(row[11]||row[12]||'').trim();
 
         _processedOTs.push({
