@@ -809,10 +809,11 @@
     }
 
     .comp-fill {
-      height: 0%;
+      height: 100%;
       background: var(--accent1);
       border-radius: 2px;
-      transition: width .4s;
+      transition: width .8s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 10px rgba(0, 229, 184, 0.3);
     }
 
     .check-wrap {
@@ -1035,8 +1036,9 @@
     }
 
     .mbar-fill {
-      height: 0%;
+      height: 100%;
       border-radius: 3px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .mbar-val {
@@ -1197,6 +1199,17 @@
       to {
         transform: rotate(360deg);
       }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .shimmer {
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 2.5s infinite linear;
     }
 
     .gcomp-card {
@@ -2634,6 +2647,7 @@
           const byUser = {};
           _processedOTs = [];
 
+          const processedCodes = new Set();
           validRows.forEach((row, idx) => {
             const codUser = String(row[0] || '').trim().toUpperCase();
             if (!codUser) return;
@@ -2641,6 +2655,10 @@
             const ot1 = String(row[27] || '').trim();
             const ot2 = String(row[28] || '').trim();
             const codigoOT = [ot1, ot2].filter(Boolean).join(' - ') || `OT-${idx + 1}`;
+
+            // ── Deduplicación: Evitar códigos OT repetidos en el mismo lote ──
+            if (processedCodes.has(codigoOT)) return;
+            processedCodes.add(codigoOT);
 
             let ubicacion = '';
             if (numCols >= 86) ubicacion = String(row[85] || '').trim();
@@ -2678,7 +2696,7 @@
 
           const userList = Object.entries(byUser).sort((a, b) => b[1] - a[1]);
           userList.forEach(([u, c]) => otLog('ok', `  → ${u}: ${c} OT${c !== 1 ? 's' : ''}`));
-          otLog('ok', `📊 Total procesadas: ${_processedOTs.length} OTs · ${userList.length} técnico(s)`);
+          otLog('ok', `📊 Total procesadas: ${_processedOTs.length} OTs (se omitieron duplicados) · ${userList.length} técnico(s)`);
 
           if (numCols < 86) otLog('warn', `⚠ Archivo tiene ${numCols} columnas. Columna 86 (ubicación) no disponible.`);
           if (numCols < 81) otLog('warn', `⚠ Columna 81 (equipo) no disponible.`);
@@ -2797,65 +2815,84 @@
       const allCodes = new Set([...Object.keys(otByCode), ...Object.keys(schByCode)]);
       allCodes.forEach(code => {
         const color = colorMap[code] || COLORS[colorIdx++ % COLORS.length];
-        const entries = (schByCode[code] || []).slice().sort((a, b) => a.dateKey.localeCompare(b.dateKey));
-        const taskQueue = [...(otByCode[code] || [])];
-        const workDays = entries.filter(e => !e.rest);
-        const restDays = entries.filter(e => e.rest);
-        const uInfo = DB.users.find(u => u.codigo === code);
+        const entries = (schByCode[code] || []).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+        let remaining = [...(otByCode[code] || [])];
+        let pendingConts = [];
 
-        restDays.forEach(s => {
-          allGroups.push({
-            code, color, uName: uInfo?.nombre || code, date: s.date, dkey: s.dateKey,
-            day: s.day, slotStart: 0, slotEnd: 0, hasSched: true, isRest: true, overnight: false,
-            scheduled: [], overtime: [], usedWork: 0, totalFree: 0, pct: 0, taskCount: 0, otItems: []
-          });
-        });
+        entries.forEach((entry) => {
+          const uInfo = DB.users.find(u => u.codigo === code);
+          const date = entry.date;
+          const dkey = entry.dateKey;
+          const common = { code, color, uName: uInfo?.nombre || code, date, dkey, day: DAYS_ES[date.getDay()] };
+          
+          const contsForToday = [...pendingConts];
+          pendingConts = [];
 
-        let remaining = [...taskQueue];
-        workDays.forEach((sched, dayIdx) => {
-          const isLastDay = dayIdx === workDays.length - 1;
-          const trial = assignTasks(sched.start, sched.end, remaining.map(t => ({ ...t })));
-          const fittingCount = trial.scheduled.filter(s => s.type === 'task' && !s.overTime).length;
-          const dayTasks = isLastDay ? remaining : remaining.slice(0, fittingCount);
-          const leftover = isLastDay ? [] : remaining.slice(fittingCount);
-          const result = assignTasks(sched.start, sched.end, dayTasks.map(t => ({ ...t })));
-
-          const groupData = {
-            code, color, uName: uInfo?.nombre || code, date: sched.date, dkey: sched.dateKey,
-            day: sched.day, slotStart: sched.start, slotEnd: sched.end,
-            hasSched: true, isRest: false, overnight: sched.overnight || false,
-            ...result, taskCount: dayTasks.length, otItems: dayTasks,
-          };
-          allGroups.push(groupData);
-
-          // 🌙 Lógica de continuación para el día siguiente si es turno nocturno
-          if (sched.overnight) {
-            const nextDate = new Date(sched.date);
-            nextDate.setDate(nextDate.getDate() + 1);
-            const nextDKey = dkStr(nextDate);
-            const nextDayName = DAYS_ES[nextDate.getDay()];
-
-            // Identificamos las tareas que ocurren después de las 24:00 (1440 min)
-            const continuations = result.scheduled.filter(s => s.endMin > 1440);
-            if (continuations.length > 0) {
-              allGroups.push({
-                code, color, uName: uInfo?.nombre || code, date: nextDate, dkey: nextDKey,
-                day: nextDayName, isContinuation: true, originalDKey: sched.dateKey,
-                scheduled: continuations.map(c => ({ ...c, isContinuation: true })),
-                taskCount: continuations.filter(c => c.type === 'task').length,
-                isRest: false, hasSched: true,
-                overtime: [], usedWork: 0, pct: 0 // Propiedades por defecto para evitar errores
-              });
-            }
+          if (contsForToday.length > 0) {
+            allGroups.push({
+              ...common, isContinuation: true, hasSched: true, isRest: false,
+              scheduled: contsForToday.map(c => ({ ...c, isContinuation: true })),
+              taskCount: contsForToday.filter(c => c.type === 'task').length,
+              overtime: [], usedWork: 0, totalFree: 0, pct: 0, otItems: []
+            });
           }
 
-          remaining = leftover;
+          if (entry.rest) {
+            allGroups.push({
+              ...common, hasSched: true, isRest: true, overnight: false,
+              scheduled: [], overtime: [], usedWork: 0, totalFree: 0, pct: 0, taskCount: 0, otItems: []
+            });
+            return;
+          }
+
+          const trial = assignTasks(entry.start, entry.end, remaining.map(t => ({ ...t })));
+          const fittingCount = trial.scheduled.filter(s => s.type === 'task' && !s.overTime).length;
+          const dayTasks = remaining.slice(0, fittingCount);
+          remaining = remaining.slice(fittingCount);
+
+          const result = assignTasks(entry.start, entry.end, dayTasks.map(t => ({ ...t })));
+          
+          if (entry.overnight) {
+            allGroups.push({
+              ...common, slotStart: entry.start, slotEnd: entry.end,
+              hasSched: true, isRest: false, overnight: true,
+              ...result,
+              scheduled: result.scheduled.filter(s => s.endMin <= 1440),
+              taskCount: result.scheduled.filter(s => s.type === 'task' && s.endMin <= 1440).length,
+              otItems: dayTasks,
+            });
+            pendingConts = result.scheduled.filter(s => s.endMin > 1440);
+          } else {
+            allGroups.push({
+              ...common, slotStart: entry.start, slotEnd: entry.end,
+              hasSched: true, isRest: false, overnight: false,
+              ...result,
+              taskCount: dayTasks.length, otItems: dayTasks,
+            });
+          }
         });
 
-        if (remaining.length > 0 && workDays.length === 0) {
+        if (pendingConts.length > 0) {
+          const lastEntry = entries[entries.length - 1];
+          if (lastEntry) {
+            const nextDate = new Date(lastEntry.date);
+            nextDate.setDate(nextDate.getDate() + 1);
+            allGroups.push({
+              code, color, uName: DB.users.find(u => u.codigo === code)?.nombre || code,
+              date: nextDate, dkey: dkStr(nextDate), day: DAYS_ES[nextDate.getDay()],
+              isContinuation: true, hasSched: true, isRest: false,
+              scheduled: pendingConts.map(c => ({ ...c, isContinuation: true })),
+              taskCount: pendingConts.filter(c => c.type === 'task').length,
+              overtime: [], usedWork: 0, pct: 0
+            });
+          }
+        }
+
+        if (remaining.length > 0) {
           allGroups.push({
-            code, color, uName: uInfo?.nombre || code, date: null, dkey: 'sin-fecha',
-            day: '—', slotStart: 480, slotEnd: 20, hasSched: false, isRest: false, overnight: false,
+            code, color, uName: DB.users.find(u => u.codigo === code)?.nombre || code,
+            date: null, dkey: 'exceso', day: 'EXTRA', slotStart: 480, slotEnd: 20,
+            hasSched: false, isRest: false, overnight: false,
             scheduled: remaining.map((t, i) => ({ type: 'task', ...t, startMin: 480 + i * 75, endMin: 480 + i * 75 + t.durMin, overTime: true })),
             overtime: remaining, usedWork: remaining.reduce((s, t) => s + t.durMin, 0),
             totalFree: 540, pct: 0, taskCount: remaining.length, otItems: remaining,
@@ -2863,7 +2900,15 @@
         }
       });
 
-      allGroups.sort((a, b) => a.code < b.code ? -1 : a.code > b.code ? 1 : a.dkey.localeCompare(b.dkey));
+      allGroups.sort((a, b) => {
+        if (a.dkey !== b.dkey) return a.dkey.localeCompare(b.dkey);
+        const nA = String(a.uName || a.code).toUpperCase();
+        const nB = String(b.uName || b.code).toUpperCase();
+        if (nA !== nB) return nA.localeCompare(nB);
+        if (a.isContinuation && !b.isContinuation) return -1;
+        if (!a.isContinuation && b.isContinuation) return 1;
+        return 0;
+      });
       ST.result = allGroups;
       renderStats(allGroups);
       renderCards(allGroups);
@@ -2873,8 +2918,7 @@
       populatePrintUsers();
       populateFilters();
     }
-
-    // ─── SCHEDULING ENGINE ────────────────────────────────
+// ─── SCHEDULING ENGINE ────────────────────────────────
     function buildFreeSlots(shiftStart, shiftEnd) {
       const mealCandidates = [...MEALS];
       if (shiftEnd > 1440) MEALS.forEach(m => mealCandidates.push({ ...m, start: m.start + 1440, end: m.end + 1440 }));
@@ -2896,15 +2940,23 @@
     function assignTasks(shiftStart, shiftEnd, tasks) {
       const { slots, breaks } = buildFreeSlots(shiftStart, shiftEnd);
       const scheduled = []; const slotsCopy = slots.map(s => ({ ...s })); let taskQueue = [...tasks];
+      let usedWork = 0;
+
       for (let si = 0; si < slotsCopy.length && taskQueue.length > 0; si++) {
         let cursor = slotsCopy[si].start; const slotEnd = slotsCopy[si].end; let firstInSlot = true;
         while (taskQueue.length > 0) {
           const transit = firstInSlot ? 0 : TRANSIT_MIN; const task = taskQueue[0];
           const available = slotEnd - cursor;
+          
+          // ── Límite de 8 horas (480 min) ──
+          if (usedWork + task.durMin > 480) {
+            break; // No asignar más tareas a este día
+          }
+
           if (available >= transit + task.durMin) {
             if (!firstInSlot) { scheduled.push({ type: 'transit', name: '🚶 Tránsito entre áreas', startMin: cursor, endMin: cursor + TRANSIT_MIN, durMin: TRANSIT_MIN }); cursor += TRANSIT_MIN; }
             scheduled.push({ type: 'task', ...task, startMin: cursor, endMin: cursor + task.durMin, overTime: false });
-            cursor += task.durMin; taskQueue.shift(); firstInSlot = false;
+            cursor += task.durMin; usedWork += task.durMin; taskQueue.shift(); firstInSlot = false;
           } else break;
         }
       }
@@ -2914,10 +2966,10 @@
       }
       breaks.forEach(b => scheduled.push({ type: 'break', name: b.name, startMin: b.start, endMin: b.end, durMin: b.end - b.start }));
       scheduled.sort((a, b) => a.startMin - b.startMin);
-      const usedWork = scheduled.filter(s => s.type === 'task').reduce((s, t) => s + t.durMin, 0);
+      const finalUsedWork = scheduled.filter(s => s.type === 'task').reduce((s, t) => s + t.durMin, 0);
       const totalFree = slots.reduce((s, sl) => s + (sl.end - sl.start), 0);
-      const pct = Math.round(Math.min(0, (usedWork / Math.max(1, totalFree)) * 0));
-      return { scheduled, overtime: taskQueue, usedWork, totalFree, pct };
+      const pct = Math.min(100, Math.round((finalUsedWork / Math.max(1, totalFree)) * 100));
+      return { scheduled, overtime: taskQueue, usedWork: finalUsedWork, totalFree, pct };
     }
 
     // ─── HELPERS ─────────────────────────────────────────
@@ -2962,7 +3014,7 @@
 
     // ─── COMPLIANCE ───────────────────────────────────────
     function compKey(code, dkey, idx) { return `${code}||${dkey}||${idx}`; }
-    function toggleTask(code, dkey, idx) {
+    function toggleTask(code, dkey, idx, cId = '') {
       const key = compKey(code, dkey, idx);
       COMP[key] = !COMP[key];
       document.querySelectorAll(`[data-ckey="${key}"]`).forEach(wrap => {
@@ -2973,18 +3025,37 @@
         if (lbl) { lbl.textContent = done ? '✓ Completado' : 'Marcar como completado'; lbl.classList.toggle('done', done); }
         if (item) item.classList.toggle('is-done', done);
       });
-      refreshCompBar(code, dkey); refreshGlobalSummary();
+      if (cId) refreshCompBarById(cId, code, dkey); 
+      else refreshCompBar(code, dkey);
+      refreshGlobalSummary();
+      saveComplianceToDB();
     }
     function refreshCompBar(code, dkey) {
-      const id = `cb-${code}-${dkey}`.replace(/[^a-zA-Z0-9\-]/g, '_');
+      ST.result.forEach((g, gi) => {
+        if (g.code === code && g.dkey === dkey) {
+          const cId = `cb-${g.code}-${g.dkey}-${gi}`.replace(/[^a-zA-Z0-9\-]/g, '_');
+          refreshCompBarById(cId, code, dkey);
+        }
+      });
+    }
+    function refreshCompBarById(id, code, dkey) {
       const el = document.getElementById(id);
       if (!el || !ST.result) return;
-      const g = ST.result.find(x => x.code === code && x.dkey === dkey);
+      const gi = parseInt(id.split('-').pop());
+      const g = ST.result[gi];
       if (!g) return;
       const tasks = (g.scheduled || []).filter(s => s.type === 'task');
       const done = tasks.filter((_, i) => COMP[compKey(code, dkey, i)]).length;
-      const pct = tasks.length ? Math.round(done / tasks.length * 0) : 0;
-      el.querySelectorAll('.comp-fill').forEach(f => f.style.width = pct + '%');
+      const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+      el.querySelectorAll('.comp-fill').forEach(f => {
+        f.style.width = pct + '%';
+        if (!f.querySelector('.shimmer-layer')) {
+          const s = document.createElement('div');
+          s.className = 'shimmer-layer shimmer';
+          s.style.cssText = 'height:100%;width:100%;';
+          f.appendChild(s);
+        }
+      });
       el.querySelectorAll('.comp-val').forEach(v => v.textContent = `${done}/${tasks.length} · ${pct}%`);
     }
     function refreshGlobalSummary() {
@@ -2997,19 +3068,22 @@
         tasks.forEach((_, i) => { byCode[g.code].total++; if (COMP[compKey(g.code, g.dkey, i)]) byCode[g.code].done++; });
       });
       const rows = Object.entries(byCode).map(([code, d]) => {
-        const pct = d.total ? Math.round(d.done / d.total * 0) : 0;
+        const pct = d.total ? Math.round((d.done / d.total) * 100) : 0;
         const bar = pct === 0 ? '#2effaa' : pct >= 70 ? '#00e5b8' : pct >= 40 ? '#ffb830' : '#ff5263';
-        return `<div class="gcomp-row">
-      <span class="gcomp-name">${code}</span>
-      <div class="gcomp-bar-bg"><div class="gcomp-bar-fill" style="width:${pct}%;background:${bar}"></div></div>
-      <span class="gcomp-pct" style="color:${bar}">${pct}%</span>
-      <span style="font-size:px;color:var(--muted)">${d.done}/${d.total}</span>
+        return `<div class="gcomp-row" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px">
+        <span class="gcomp-name" style="font-weight:700;color:var(--text)">${code}</span>
+        <span style="color:var(--muted)">${d.done}/${d.total} tareas</span>
+      </div>
+      <div class="gcomp-bar-bg" style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;display:flex">
+        <div class="gcomp-bar-fill" style="width:${pct}%;background:${bar};transition:width 1s ease;height:100%"></div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:${bar};margin-top:2px;font-weight:700">${pct}%</div>
     </div>`;
       }).join('');
       const el = document.getElementById('gcomp-rows');
       if (el) el.innerHTML = rows || '<p style="color:var(--muted);font-size:11px">Sin tareas.</p>';
     }
-
     // ─── RENDER STATS ─────────────────────────────────────
     function renderStats(g) {
       const totalOT = g.reduce((s, x) => s + (x.taskCount || 0), 0);
@@ -3067,134 +3141,67 @@
       }
       groups.forEach((g, gi) => {
         const initials = g.code.split(/[\.\-_]+/).filter(Boolean).map(p => p[0] || '').join('').slice(0, 3).toUpperCase();
-        const barColor = g.pct >= 90 ? '#ff5263' : g.pct >= 70 ? '#ffb830' : '#00e5b8';
-        const dateStr = g.date ? g.date.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : g.dkey;
+        const dateStr = g.date ? g.date.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' }) : g.dkey;
         const items = (g.scheduled || []).filter(s => hideTransit ? s.type !== 'transit' : true);
         const taskItems = (g.scheduled || []).filter(s => s.type === 'task');
-
-        if (g.isContinuation) {
-          const card = document.createElement('div');
-          card.className = 'ucard continuation';
-          card.style.borderLeft = `4px solid ${g.color}`;
-          card.style.background = `rgba(0, 0, 0, 0.2)`;
-          card.innerHTML = `
-        <div class="uhead" style="padding: 10px 15px; background: rgba(0,0,0,0.1)">
-          <div class="avatar" style="width:30px;height:30px;font-size:10px;background:${g.color}">${initials}</div>
-          <div class="uinfo">
-            <h3 style="font-size:11px">${g.code} <small style="color:var(--accent1)">[CONTINUACIÓN]</small></h3>
-            <p style="font-size:9px">${g.day} · ${dateStr}</p>
-          </div>
-        </div>
-        <div class="day-sched" style="padding: 10px 15px">
-          <div class="day-title" style="font-size:8px;color:var(--accent5)">🌙 Término de turno anterior</div>
-          ${items.map(item => `
-            <div class="sched-item" style="opacity: 0.8; border-bottom-color: rgba(255,255,255,0.05)">
-              <div class="si-time" style="color:var(--accent5)">${hhmm(item.startMin)}</div>
-              <div class="si-dot" style="background:var(--accent5);width:6px;height:6px;margin-top:5px"></div>
-              <div class="si-body">
-                <div class="si-name" style="font-size:11px;color:var(--text)">${item.catalogo || item.equipo || item.ot || item.name || 'Tarea'}</div>
-                <div class="si-tags">${item.ot ? `<span class="tag tag-muted" style="font-size:8px">${item.ot}</span>` : ''}</div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-          grid.appendChild(card);
-          return;
-        }
-
-        const rows = items.map(item => {
-          if (item.type === 'break') return `
-        <div class="sched-item is-break">
-          <div class="si-time">${hhmm(item.startMin)}</div>
-          <div class="si-dot" style="background:var(--green);margin-top:4px"></div>
-          <div class="si-body"><div class="si-name">${item.name}</div>
-            <div class="si-tags"><span class="tag tag-green">45 min</span></div></div>
-        </div>`;
-          if (item.type === 'transit') return `
-        <div class="sched-item is-transit">
-          <div class="si-time">${hhmm(item.startMin)}</div>
-          <div class="si-dot" style="background:var(--accent3);margin-top:4px"></div>
-          <div class="si-body"><div class="si-name">${item.name}</div>
-            <div class="si-tags"><span class="tag tag-orange">15 min</span></div></div>
-        </div>`;
-          const taskIdx = taskItems.indexOf(item);
-          const ckey = compKey(g.code, g.dkey, taskIdx);
-          const done = !!COMP[ckey];
-          return `
-        <div class="sched-item${done ? ' is-done' : ''}">
-          <div class="si-time">${hhmm(item.startMin)}${item.overTime ? '<br><span style="font-size:8px;color:var(--accent2)">⚠extra</span>' : ''}</div>
-          <div class="si-dot" style="background:${done ? 'var(--accent1)' : g.color}${item.overTime ? ';outline:2px solid var(--accent2)' : ''};margin-top:4px"></div>
-          <div class="si-body">
-            <div class="si-name">${item.catalogo || item.equipo || item.ot || 'Tarea'}</div>
-            <div class="si-tags">
-              ${item.equipo ? `<span class="tag tag-blue">🖥 ${item.equipo}</span>` : ''}
-              ${item.sucursal ? `<span class="tag tag-purple">📍 ${item.sucursal}</span>` : ''}
-              ${item.ot ? `<span class="tag tag-green">${item.ot}</span>` : ''}
-              ${item.contrato ? `<span class="tag tag-orange">${item.contrato}</span>` : ''}
-              <span class="tag tag-muted">⏱ ${fmtDur(item.durMin)}</span>
-              ${item.overTime ? `<span class="tag tag-red">⚠ Excede turno</span>` : ''}
-            </div>
-            <div class="check-wrap" data-ckey="${ckey}" onclick="toggleTask('${g.code}','${g.dkey}',${taskIdx})">
-              <div class="check-box${done ? ' done' : ''}"></div>
-              <span class="check-label${done ? ' done' : ''}">${done ? '✓ Completado' : 'Marcar como completado'}</span>
-            </div>
-          </div>
-        </div>`;
-        }).join('');
-
-        const availMin = Math.max(0, g.totalFree - g.usedWork);
-        const cbId = `cb-${g.code}-${g.dkey}`.replace(/[^a-zA-Z0-9\-]/g, '_');
-        const doneCnt = taskItems.filter((_, i) => COMP[compKey(g.code, g.dkey, i)]).length;
-        const compPct = taskItems.length ? Math.round(doneCnt / taskItems.length * 0) : 0;
+        const cbId = `cb-${g.code}-${g.dkey}-${gi}`.replace(/[^a-zA-Z0-9\-]/g, '_');
 
         const card = document.createElement('div');
-        card.className = 'ucard';
-        card.style.animationDelay = `${gi * .04}s`;
+        card.className = 'ucard' + (g.isContinuation ? ' continuation' : '');
+        card.style.borderLeft = `4px solid ${g.color}`;
+        if (g.isContinuation) card.style.background = `rgba(0, 0, 0, 0.15)`;
+        
         card.innerHTML = `
       <div class="uhead">
         <div class="avatar" style="background:${g.color}">${initials}</div>
         <div class="uinfo">
-          <h3>${g.code} <span style="font-size:10px;font-weight:400;color:var(--muted)">${g.uName || ''}</span></h3>
-          <p>${g.day} · ${dateStr} · ${g.isRest ? '🛌 DESCANSO' : 'Turno ' + hhmmPlain(g.slotStart) + '–' + hhmmPlain(g.slotEnd) + (g.overnight ? ' 🌙' : '')}</p>
+          <h3>${g.code}${g.isContinuation ? ' <small style="color:var(--accent5)">[CONTINUACIÓN]</small>' : ''}</h3>
+          <p>${g.day} · ${dateStr}</p>
         </div>
-        <div style="margin-left:auto">
-          <span class="tag" style="background:${g.color}18;color:${g.color};border:1px solid ${g.color}35">
-            ${g.taskCount} OT${g.taskCount !== 1 ? 's' : ''}
-          </span>
-        </div>
+        ${!g.isRest ? `<span class="tag" style="margin-left:auto;background:${g.color}15;color:${g.color};border:1px solid ${g.color}30">${g.overnight ? '🌙 Nocturno' : '☀️ Turno'}</span>` : ''}
       </div>
-      ${g.isRest
-            ? `<div class="no-sched-note" style="color:var(--accent1);border-color:rgba(0,229,184,.2);background:rgba(0,229,184,.05)">🛌 Día de DESCANSO</div>`
-            : !g.hasSched
-              ? `<div class="no-sched-note">⚠ Sin horario registrado — usando distribución por defecto</div>`
-              : g.overnight
-                ? `<div class="night-note">🌙 Turno nocturno (22:00 – 07:00) · continúa hasta el día siguiente</div>`
-                : ''}
-      ${g.isRest ? '' : `
-        <div class="day-sched">
-          <div class="day-title">Distribución · ${fmtDur(g.usedWork)} trabajo · ${fmtDur(availMin)} libre</div>
-          ${rows || '<div style="color:var(--muted);font-size:11px;padding:10px 0">Sin tareas asignadas para este día</div>'}
-        </div>
-        <div class="comp-bar" id="${cbId}">
-          <span class="comp-label">Cumplimiento</span>
-          <div class="comp-bg"><div class="comp-fill" style="width:${compPct}%"></div></div>
-          <span class="comp-val">${doneCnt}/${taskItems.length} · ${compPct}%</span>
-        </div>
-        <div class="avail">
-          <div class="avail-head">
-            <span>Ocupación del turno</span>
-            <span style="color:${barColor}">${g.pct}%</span>
+      <div class="day-sched">
+        <div class="day-title">${g.isRest ? '🛌 Día de Descanso' : (g.isContinuation ? '🌙 Término de turno anterior' : '📅 Actividades del día')}</div>
+        ${items.map((item, ii) => {
+          const isT = item.type === 'task';
+          let taskIdx = -1;
+          if (isT) taskIdx = taskItems.indexOf(item);
+          const ckey = isT ? compKey(g.code, g.dkey, taskIdx) : '';
+          const done = isT && COMP[ckey];
+          
+          return `
+        <div class="sched-item ${isT && done ? 'is-done' : ''} ${item.type === 'transit' ? 'is-transit' : ''} ${item.type === 'break' ? 'is-break' : ''}">
+          <div class="si-time" style="color:${g.isContinuation ? 'var(--accent5)' : 'var(--accent1)'}">${hhmm(item.startMin)}</div>
+          <div class="si-dot" style="background:${isT ? (done ? 'var(--accent1)' : g.color) : (item.type === 'break' ? 'var(--green)' : 'var(--accent3)')}"></div>
+          <div class="si-body">
+            <div class="si-name">${item.catalogo || item.equipo || item.name || 'Tarea'}</div>
+            ${isT ? `
+            <div class="si-tags">
+              <span class="tag tag-blue">🖥 ${item.equipo}</span>
+              <span class="tag tag-muted">⏱ ${fmtDur(item.durMin)}</span>
+              ${item.ot ? `<span class="tag tag-green">${item.ot}</span>` : ''}
+            </div>
+            <div class="check-wrap" data-ckey="${ckey}" onclick="toggleTask('${g.code}','${g.dkey}',${taskIdx}, '${cbId}')">
+              <div class="check-box ${done ? 'done' : ''}"></div>
+              <span class="check-label ${done ? 'done' : ''}">${done ? '✓ Completado' : 'Marcar como completado'}</span>
+            </div>
+            ` : ''}
           </div>
-          <div class="avail-bar"><div class="avail-fill" style="width:${g.pct}%;background:${barColor}"></div></div>
-          <div class="avail-note" style="color:${g.overtime.length > 0 ? 'var(--accent2)' : availMin > 0 ? 'var(--muted)' : 'var(--accent1)'}">
-            ${g.overtime.length > 0 ? `⚠ ${g.overtime.length} OT(s) en overtime` : availMin > 0 ? `⏳ Tiempo libre: ${fmtDur(availMin)}` : `✓ Turno completo`}
-          </div>
-        </div>`}`;
+        </div>`;
+        }).join('')}
+      </div>
+      ${!g.isRest && taskItems.length > 0 ? `
+      <div class="comp-bar" id="${cbId}">
+        <span class="comp-label">Cumplimiento</span>
+        <div class="comp-bg"><div class="comp-fill" style="width:0%"></div></div>
+        <span class="comp-val">0/${taskItems.length} · 0%</span>
+      </div>
+      ` : ''}
+      `;
         grid.appendChild(card);
+        if (!g.isRest && taskItems.length > 0) refreshCompBarById(cbId, g.code, g.dkey);
       });
     }
-
     // ─── RENDER MONTHLY ──────────────────────────────────
     function renderMonthly(groups) {
       const mg = document.getElementById('mgrid');
@@ -3257,8 +3264,8 @@
         tr.innerHTML = `
       <td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${r.color};margin-right:7px;vertical-align:middle"></span>${r.code}</td>
       <td>${dateStr}</td><td>${r.day}</td>
-      <td style="color:var(--accent1);font-weight:500">${hhmmPlain(r.startMin)}</td>
-      <td style="color:${r.type === 'task' && r.overTime ? 'var(--accent2)' : 'var(--accent1)'};font-weight:500">${hhmmPlain(r.endMin)}</td>
+      <td style="color:var(--accent1);font-weight:600">${hhmmPlain(r.startMin)}</td>
+      <td style="color:${r.type === 'task' && r.overTime ? 'var(--accent2)' : 'var(--accent3)'};font-weight:600">${hhmmPlain(r.endMin)}</td>
       <td><span class="tag tag-muted">${fmtDur(r.durMin)}</span></td>
       <td>${typeLbl}</td><td>${actLbl}</td>
       <td>${r.equipo || '—'}</td><td>${r.ot || '—'}</td><td>${r.sucursal || '—'}</td>
@@ -3286,28 +3293,31 @@
         grid.innerHTML = '<div class="nodata"><span class="nd-icon">🔍</span><p>Sin resultados.</p></div>';
         refreshGlobalSummary(); return;
       }
-      groups.forEach(g => {
+      groups.forEach((g, gi) => {
         const tasks = g.scheduled.filter(s => s.type === 'task');
         const initials = g.code.split(/[\.\-_]+/).filter(Boolean).map(p => p[0] || '').join('').slice(0, 3).toUpperCase();
-        const dateStr = g.date ? g.date.toLocaleDateString('es-PE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : g.dkey;
+        const dateStr = g.date ? g.date.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' }) : g.dkey;
         const doneCount = tasks.filter((_, i) => COMP[compKey(g.code, g.dkey, i)]).length;
         const pct = tasks.length ? Math.round(doneCount / tasks.length * 100) : 0;
-        const cbId = `cb-${g.code}-${g.dkey}`.replace(/[^a-zA-Z0-9\-]/g, '_');
+        const cbId = `cb-${g.code}-${g.dkey}-${gi}`.replace(/[^a-zA-Z0-9\-]/g, '_');
+        
         const taskRows = tasks.map((t, i) => {
           const key = compKey(g.code, g.dkey, i); const done = !!COMP[key];
           return `
         <div class="sched-item${done ? ' is-done' : ''}">
-          <div class="si-time">${hhmmPlain(t.startMin)}</div>
+          <div class="si-time">
+            <span style="color:var(--accent1)">${hhmmPlain(t.startMin)}</span><br>
+            <span style="color:var(--accent3);font-size:10px">${hhmmPlain(t.endMin)}</span>
+          </div>
           <div class="si-dot" style="background:${done ? 'var(--accent1)' : g.color};margin-top:4px"></div>
           <div class="si-body">
-            <div class="si-name">${t.catalogo || t.equipo || t.ot || 'Tarea'}</div>
+            <div class="si-name">${t.catalogo || t.equipo || 'Tarea'}</div>
             <div class="si-tags">
               ${t.equipo ? `<span class="tag tag-blue">🖥 ${t.equipo}</span>` : ''}
-              ${t.sucursal ? `<span class="tag tag-purple">📍 ${t.sucursal}</span>` : ''}
               ${t.ot ? `<span class="tag tag-green">${t.ot}</span>` : ''}
               <span class="tag tag-muted">⏱ ${fmtDur(t.durMin)}</span>
             </div>
-            <div class="check-wrap" data-ckey="${key}" onclick="toggleTask('${g.code}','${g.dkey}',${i})">
+            <div class="check-wrap" data-ckey="${key}" onclick="toggleTask('${g.code}','${g.dkey}',${i},'${cbId}')">
               <div class="check-box${done ? ' done' : ''}"></div>
               <span class="check-label${done ? ' done' : ''}">${done ? '✓ Completado' : 'Marcar como completado'}</span>
             </div>
@@ -3315,15 +3325,15 @@
         </div>`;
         }).join('');
         const card = document.createElement('div');
-        card.className = 'ucard';
+        card.className = 'ucard' + (g.isContinuation ? ' continuation' : '');
         card.innerHTML = `
       <div class="uhead">
         <div class="avatar" style="background:${g.color}">${initials}</div>
-        <div class="uinfo"><h3>${g.code}</h3><p>${g.day} · ${dateStr}</p></div>
-        <span class="tag" style="margin-left:auto;background:${g.color}18;color:${g.color};border:1px solid ${g.color}35">${tasks.length} tarea(s)</span>
+        <div class="uinfo"><h3>${g.code}${g.isContinuation ? ' <small style="color:var(--accent5)">[CONTINUACIÓN]</small>' : ''}</h3><p>${g.day} · ${dateStr}</p></div>
+        <span class="tag" style="margin-left:auto;background:${g.color}18;color:${g.color};border:1px solid ${g.color}35">${tasks.length} tareas</span>
       </div>
       <div class="day-sched">
-        <div class="day-title">Registro de cumplimiento</div>
+        <div class="day-title">${g.isContinuation ? '🌙 Término de turno anterior' : 'Registro de cumplimiento'}</div>
         ${taskRows}
       </div>
       <div class="comp-bar" id="${cbId}">
@@ -3333,10 +3343,10 @@
         <button class="btn btn-sm btn-secondary" style="margin-left:auto;font-size:9px;padding:3px 10px" onclick="saveComplianceToDB()">💾 Guardar</button>
       </div>`;
         grid.appendChild(card);
+        refreshCompBarById(cbId, g.code, g.dkey);
       });
       refreshGlobalSummary();
     }
-
     // ─── PRINT ───────────────────────────────────────────
     function renderPrintPreview() {
       if (!ST.result) return;
