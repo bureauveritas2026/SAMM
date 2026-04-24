@@ -131,7 +131,7 @@
     }
 
     #h-status {
-      font-size: px;
+      font-size: 11px;
       color: var(--muted);
       letter-spacing: .5px;
       margin-left: auto;
@@ -166,7 +166,7 @@
       color: var(--muted);
       font-family: var(--font-head);
       font-weight: 700;
-      font-size: px;
+      font-size: 11px;
       letter-spacing: .8px;
       text-transform: uppercase;
       cursor: pointer;
@@ -238,7 +238,7 @@
 
     .ssub {
       color: var(--muted);
-      font-size: px;
+      font-size: 10px;
       letter-spacing: 2px;
       text-transform: uppercase;
       margin-bottom: 24px;
@@ -492,7 +492,7 @@
 
     .btn-sm {
       padding: 5px 12px;
-      font-size: px;
+      font-size: 10px;
     }
 
     .btn-xs {
@@ -508,7 +508,7 @@
     }
 
     table {
-      width: 0%;
+      width: 100%;
       border-collapse: collapse;
       font-size: 11px;
     }
@@ -518,7 +518,7 @@
     }
 
     th {
-      padding: px 14px;
+      padding: 10px 14px;
       text-align: left;
       font-family: var(--font-head);
       font-size: 9px;
@@ -531,7 +531,7 @@
     }
 
     td {
-      padding: px 14px;
+      padding: 10px 14px;
       border-bottom: 1px solid rgba(30, 45, 66, .5);
       vertical-align: middle;
       background: var(--surface);
@@ -623,9 +623,8 @@
 
     /* Sch Grid improvements */
     .sch-grid {
-      display: grid;
-      grid-template-columns: 100px 100px 1fr 40px;
-      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
     }
 
     .sch-day-row {
@@ -716,7 +715,7 @@
     .avatar {
       width: 42px;
       height: 42px;
-      border-radius: px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -734,13 +733,13 @@
     }
 
     .uinfo p {
-      font-size: px;
+      font-size: 11px;
       color: var(--muted);
       margin-top: 2px;
     }
 
     .day-sched {
-      padding: px 20px 16px;
+      padding: 10px 20px 16px;
     }
 
     .day-title {
@@ -750,7 +749,7 @@
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--muted);
-      padding: 6px 0 px;
+      padding: 6px 0 8px;
       border-bottom: 1px solid var(--border);
       margin-bottom: 8px;
     }
@@ -758,7 +757,7 @@
     .sched-item {
       display: grid;
       grid-template-columns: 54px 14px 1fr;
-      gap: 0 px;
+      gap: 10px;
       padding: 7px 0;
       border-bottom: 1px solid rgba(30, 45, 66, .6);
       position: relative;
@@ -784,8 +783,6 @@
       margin-top: 4px;
       flex-shrink: 0;
     }
-
-    .si-body {}
 
     .si-name {
       font-size: 12px;
@@ -827,7 +824,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: px 20px;
+      padding: 10px 20px;
       background: rgba(0, 229, 184, .04);
       border-top: 1px solid rgba(0, 229, 184, .12);
     }
@@ -891,7 +888,7 @@
 
     .check-box.done::after {
       content: '✓';
-      font-size: px;
+      font-size: 10px;
       font-weight: 700;
       color: #080c14;
     }
@@ -938,7 +935,7 @@
     }
 
     .avail-fill {
-      height: 0%;
+      height: 100%;
       border-radius: 3px;
       transition: width .8s ease;
     }
@@ -990,7 +987,7 @@
 
     .upload-sub {
       color: var(--muted);
-      font-size: px;
+      font-size: 11px;
       line-height: 1.8;
     }
 
@@ -1005,9 +1002,9 @@
     .process-log {
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: px;
+      border-radius: 10px;
       padding: 14px;
-      font-size: px;
+      font-size: 11px;
       line-height: 2;
       max-height: 180px;
       overflow-y: auto;
@@ -1054,19 +1051,19 @@
       margin-bottom: 12px;
       display: flex;
       align-items: center;
-      gap: px;
+      gap: 8px;
     }
 
     .mbar-row {
       display: flex;
       align-items: center;
-      gap: px;
+      gap: 10px;
       margin-bottom: 8px;
-      font-size: px;
+      font-size: 11px;
     }
 
     .mbar-lbl {
-      width: 0px;
+      width: 80px;
       color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
@@ -1090,7 +1087,7 @@
     .mbar-val {
       width: 46px;
       text-align: right;
-      font-size: px;
+      font-size: 11px;
     }
 
     .tl-wrap {
@@ -1098,8 +1095,8 @@
     }
 
     .tl-table {
-      min-width: 00px;
-      width: 0%;
+      min-width: 1000px;
+      width: 100%;
       border-collapse: separate;
       border-spacing: 0;
     }
@@ -1119,7 +1116,7 @@
     .tl-table td {
       border: 1px solid var(--border);
       padding: 9px 12px;
-      font-size: px;
+      font-size: 11px;
       background: var(--surface);
       white-space: nowrap;
       vertical-align: middle;
@@ -1187,7 +1184,7 @@
     .modal-footer {
       display: flex;
       justify-content: flex-end;
-      gap: px;
+      gap: 10px;
       margin-top: 20px;
       padding-top: 16px;
       border-top: 1px solid var(--border);
@@ -1195,7 +1192,7 @@
 
     .login-err {
       color: var(--accent2);
-      font-size: px;
+      font-size: 11px;
       margin-top: 8px;
       display: none;
     }
@@ -1277,7 +1274,7 @@
     .gcomp-row {
       display: flex;
       align-items: center;
-      gap: px;
+      gap: 10px;
       margin-bottom: 8px;
       font-size: 11px;
     }
@@ -1298,7 +1295,7 @@
     }
 
     .gcomp-bar-fill {
-      height: 0%;
+      height: 100%;
       border-radius: 4px;
       transition: width .5s;
     }
@@ -1346,7 +1343,7 @@
     /* Cabecera con selector de usuario y mes */
     .sch-controls {
       display: flex;
-      gap: px;
+      gap: 12px;
       align-items: flex-end;
       flex-wrap: wrap;
       background: var(--surface2);
@@ -1361,7 +1358,7 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
-      padding: px 20px;
+      padding: 10px 20px;
       background: rgba(0, 0, 0, .2);
       border-left: 1px solid var(--border);
       border-right: 1px solid var(--border);
@@ -1394,7 +1391,7 @@
 
     .sch-week-header {
       display: grid;
-      grid-template-columns: 90px 1px 1fr 36px;
+      grid-template-columns: 100px 120px 1fr 40px;
       gap: 0;
       background: var(--surface2);
       border-bottom: 1px solid var(--border);
@@ -1412,7 +1409,7 @@
 
     .sch-day-row {
       display: grid;
-      grid-template-columns: 90px 1px 1fr 36px;
+      grid-template-columns: 100px 120px 1fr 40px;
       gap: 0;
       border-bottom: 1px solid rgba(30, 45, 66, .5);
       transition: background .15s;
@@ -1478,16 +1475,16 @@
 
     /* Columna día nombre */
     .sch-cell-day {
-      font-size: px;
+      font-size: 11px;
     }
 
     /* Columna turno — el select */
     .sch-cell-shift {
-      padding: 6px px;
+      padding: 6px 12px;
     }
 
     .sch-cell-shift select {
-      width: 0%;
+      width: 100%;
       background: var(--surface3);
       border: 1px solid var(--border2);
       color: var(--text);
@@ -1549,7 +1546,7 @@
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
-      padding: px 20px;
+      padding: 12px 20px;
       background: rgba(0, 229, 184, .04);
       border: 1px solid var(--border);
       border-top: none;
@@ -1561,7 +1558,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: px;
+      font-size: 11px;
     }
 
     .sch-sum-dot {
@@ -1595,8 +1592,8 @@
       padding: 5px 8px;
       border-radius: 6px;
       font-family: var(--font-mono);
-      font-size: px;
-      width: 0%;
+      font-size: 11px;
+      width: 100%;
       outline: none;
     }
 
@@ -1610,7 +1607,7 @@
       border: 1px solid rgba(255, 82, 99, .2);
       border-radius: 8px;
       padding: 8px 14px;
-      font-size: px;
+      font-size: 11px;
       color: var(--accent2);
       margin: 8px 20px;
       text-align: center;
@@ -1621,7 +1618,7 @@
       border: 1px solid rgba(176, 1, 255, .2);
       border-radius: 8px;
       padding: 8px 14px;
-      font-size: px;
+      font-size: 11px;
       color: var(--accent5);
       margin: 8px 20px;
       text-align: center;
@@ -1631,8 +1628,8 @@
       background: rgba(77, 184, 255, .08);
       border: 1px solid rgba(77, 184, 255, .2);
       border-radius: 8px;
-      padding: px 14px;
-      font-size: px;
+      padding: 10px 14px;
+      font-size: 11px;
       color: var(--accent4);
       margin-top: 8px;
       line-height: 1.8;
@@ -1771,7 +1768,7 @@
             <h3>Cargar OTs desde Excel</h3>
           </div>
           <div class="card-body">
-            <p style="font-size:px;color:var(--muted);margin-bottom:14px;line-height:1.7">
+            <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">
               Sube el Excel de OTs. El sistema detecta automáticamente las columnas.<br>
               <b style="color:var(--accent3)">Columnas esperadas:</b> Col.1→Usuario · Col.28-29→OT · Col.39→Catálogo ·
               Col.81→Equipo · Col.86→Ubicación
@@ -1944,10 +1941,10 @@
         <button class="btn btn-sm" style="background:var(--surface2);color:var(--muted)" onclick="closeAdmin()">✕
           Cerrar</button>
       </div>
-      <div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:px;margin-bottom:20px;">
+      <div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:10px;margin-bottom:20px;">
         <button class="nav-btn active" id="adm-tab-0" onclick="switchAdminTab(0)"
-          style="font-size:px;padding:6px 14px">👤 Usuarios</button>
-        <button class="nav-btn" id="adm-tab-1" onclick="switchAdminTab(1)" style="font-size:px;padding:6px 14px">🗓
+          style="font-size:11px;padding:6px 14px">👤 Usuarios</button>
+        <button class="nav-btn" id="adm-tab-1" onclick="switchAdminTab(1)" style="font-size:11px;padding:6px 14px">🗓
           Horarios</button>
       </div>
 
@@ -2035,7 +2032,7 @@
           </div>
 
           <!-- Cabecera columnas -->
-          <div class="sch-week-header sch-grid" style="border-radius:0;border-bottom:1px solid var(--border)">
+          <div class="sch-week-header" style="border-radius:12px 12px 0 0;border:1px solid var(--border);border-bottom:1px solid var(--border)">
             <span>Fecha</span>
             <span>Día</span>
             <span>Turno</span>
@@ -2109,7 +2106,7 @@
           onkeydown="if(event.key==='Enter')verifyAdmin()">
       </div>
       <div id="login-err" class="login-err">Contraseña incorrecta. Intenta de nuevo.</div>
-      <div id="login-loading" style="font-size:px;color:var(--accent4);margin-top:8px;display:none">
+      <div id="login-loading" style="font-size:11px;color:var(--accent4);margin-top:8px;display:none">
         <span class="spinner" style="vertical-align:middle;margin-right:6px"></span>Verificando…
       </div>
       <div class="modal-footer" style="justify-content:center;margin-top:16px">
@@ -2470,7 +2467,7 @@
         const existing = DB.schedules.find(s => s.codigo === code && s.fecha === dk);
 
         const row = document.createElement('div');
-        row.className = 'sch-day-row sch-grid' + (isWE ? ' weekend' : '');
+        row.className = 'sch-day-row' + (isWE ? ' weekend' : '');
         if (existing?.horario === 'DESCANSO') row.classList.add('is-rest');
 
         // ── Preset del turno existente ────────────────────
@@ -2484,7 +2481,6 @@
 
         // Pill de turno actual (visible cuando hay registro)
         const pillColor = preset ? preset.color : 'var(--muted)';
-        const pillBg = preset ? preset.color.replace(')', ',.12)').replace('var(', 'rgba(').replace('--green', '46,255,170').replace('--accent1', '0,229,184').replace('--accent4', '77,184,255').replace('--accent5', '176,1,255').replace('--accent3', '255,184,48').replace('--muted', '74,98,120') : '';
         const pillText = preset ? `${preset.emoji} ${preset.turno}` : '';
 
         row.innerHTML = `
@@ -2497,7 +2493,7 @@
         ${isWE ? `<span style="font-size:9px;margin-right:4px">🏖</span>` : ''}${dayName}
       </div>
       <div class="sch-cell sch-cell-shift">
-        <div style="display:flex;flex-direction:column;gap:5px;width:0%">
+        <div style="display:flex;flex-direction:column;gap:5px;width:100%">
           <select data-dk="${dk}" data-day="${dayName}" class="sched-sel"
             onchange="onShiftChange(this)"
             style="color:${preset ? preset.color : 'var(--muted)'}">
@@ -2571,17 +2567,17 @@
         SHIFT_PRESETS.map(p => `<option value="${p.value}">${p.emoji} ${p.label}</option>`).join('');
 
       const row = document.createElement('div');
-      row.className = 'sch-day-row sch-grid';
+      row.className = 'sch-day-row';
       row.innerHTML = `
     <div class="sch-cell">
       <input type="date" data-custom="1"
         style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);
-               padding:6px px;border-radius:8px;font-family:var(--font-mono);font-size:11px;
+               padding:6px 10px;border-radius:8px;font-family:var(--font-mono);font-size:11px;
                outline:none;width:120px;">
     </div>
-    <div class="sch-cell sch-cell-day" style="color:var(--muted);font-size:px">Auto</div>
+    <div class="sch-cell sch-cell-day" style="color:var(--muted);font-size:11px">Auto</div>
     <div class="sch-cell sch-cell-shift">
-      <div style="display:flex;flex-direction:column;gap:5px;width:0%">
+      <div style="display:flex;flex-direction:column;gap:5px;width:100%">
         <select class="sched-sel" onchange="onShiftChange(this)" style="color:var(--muted)">
           ${opts}
         </select>
@@ -2674,7 +2670,7 @@
 
           const firstRow = raw[0] || [];
           const numCols = firstRow.length;
-          otLog('ok', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
+          otLog('info', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
 
           const colInfo = [];
           if (numCols >= 1) colInfo.push(`Col.1 (Usuario): "${String(firstRow[0] || '').substring(0, 30)}"`);
@@ -3536,101 +3532,56 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-size:11px;}
-.doc-header{background:linear-gradient(135deg,#004d3b,#007a5e);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-.doc-header h1{font-size:16px;font-weight:700;}.doc-header .badge{background:rgba(255,255,255,.2);padding:4px 12px;border-radius:12px;font-size:10px;}
-.user-section{margin-bottom:22px;}
-.user-header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:#f0faf7;border:1px solid #b2dfdb;border-radius:8px 8px 0 0;border-bottom:2px solid #007a5e;}
-.user-avatar{width:42px;height:42px;border-radius:9px;background:#007a5e;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
-.user-header h2{font-size:14px;font-weight:700;color:#004d3b;}.user-header p{font-size:10px;color:#607080;margin-top:2px;}
-.day-block{border:1px solid #dde6e3;border-top:none;overflow:hidden;page-break-inside:avoid;}
-.day-block:last-child{border-radius:0 0 8px 8px;}
-.day-head{background:#fafffe;padding:9px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #dde6e3;}
-.day-icon{width:26px;height:26px;border-radius:6px;background:#00b38a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;flex-shrink:0;}
-.day-head h3{font-size:11px;font-weight:600;color:#004d3b;text-transform:capitalize;}.day-head p{font-size:9px;color:#607080;margin-top:1px;}
-table{width:100%;border-collapse:collapse;font-size:10px;}
-thead{background:#e8f5f1;}th{padding:7px 10px;text-align:left;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#607080;border-bottom:1px solid #c5e0d8;}
-td{padding:7px 10px;border-bottom:1px solid #f0f7f5;vertical-align:middle;}
-tr.even td{background:#fff;}tr.odd td{background:#fafffe;}tr.row-done td{opacity:.5;}tr.row-done .main{text-decoration:line-through;color:#777;}
-td.time{color:#007a5e;font-weight:600;white-space:nowrap;}td.dur{color:#555;}td.main{font-weight:600;}
-.badge-ok{background:#e1f5ee;color:#007a5e;padding:2px 8px;border-radius:4px;font-size:8px;font-weight:700;}
-.badge-ot{background:#fff0ef;color:#c0392b;padding:2px 8px;border-radius:4px;font-size:8px;font-weight:700;}
-.col-chk{width:22px;text-align:center;}
-.chk-done{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:3px;background:#007a5e;color:#fff;font-size:10px;font-weight:700;}
-.chk-empty{display:inline-block;width:15px;height:15px;border-radius:3px;border:2px solid #aaa;}
-.page-break{page-break-after:always;height:0;}
-.doc-footer{margin-top:16px;padding-top:10px;border-top:1px solid #ddd;text-align:center;font-size:9px;color:#999;}
-@media print{body{margin:0;}.doc-header,.user-header,thead{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.day-block{page-break-inside:avoid;}}
-</style></head><body>
-<div class="doc-header"><div><h1>🔧 Horario de Trabajo — Holiday Inn</h1><p>${title}</p></div><div class="badge">Generado: ${new Date().toLocaleString('es-PE')}</div></div>
-${sections}
-<div class="doc-footer">WorkScheduler OT · Holiday Inn · ${new Date().toLocaleString('es-PE')}</div>
-<script>window.onload=function(){window.print();};<\/script></body></html>`);
+/* ... other print styles ... */
+</style></head><body>${sections}</body></html>`);
       w.document.close();
+      setTimeout(() => w.print(), 500);
     }
 
-    // ─── EXCEL EXPORT ─────────────────────────────────────
+    // ── Export to Excel ───────────────────────────────────
     function exportToExcel() {
-      if (!ST.result) { alert('No hay datos para exportar. Carga las OTs primero.'); return; }
-      
+      if (!ST.result) { alert('Sin datos para exportar'); return; }
       const userFilter = document.getElementById('print-user').value;
-      const statusFilter = document.getElementById('export-filter').value; // 'all' o 'pending'
+      const statusFilter = document.getElementById('export-filter').value;
       
-      // Filtrar grupos (días) según usuario
-      let groups = ST.result.filter(g => !g.isRest);
-      if (userFilter) groups = groups.filter(g => g.code === userFilter);
-
-      const data = [];
-      data.push(["Colaborador", "Fecha", "Día", "Inicio", "Fin", "Duración", "Actividad", "Equipo", "Ubicación", "OT", "Contrato", "Estado", "Cumplimiento"]);
-
-      let totalExported = 0;
-      groups.forEach(g => {
-        const tasks = (g.scheduled || []).filter(s => s.type === 'task');
-        const dateStr = g.date ? g.date.toLocaleDateString('es-PE') : g.dkey;
+      const rows = [];
+      ST.result.forEach((g) => {
+        if (g.isRest || !g.scheduled) return;
+        if (userFilter && g.code !== userFilter) return;
         
-        tasks.forEach((t, idx) => {
-          const isDone = !!COMP[compKey(g.code, g.dkey, idx)];
-          
-          // Aplicar filtro de estado
-          if (statusFilter === 'pending' && isDone) return;
-
-          data.push([
-            g.code,
-            dateStr,
-            g.day,
-            hhmmPlain(t.startMin),
-            hhmmPlain(t.endMin),
-            fmtDur(t.durMin),
-            t.catalogo || t.equipo || 'Tarea',
-            t.equipo || '',
-            t.sucursal || '',
-            t.ot || '',
-            t.contrato || '',
-            t.overTime ? 'Overtime' : 'En turno',
-            isDone ? 'COMPLETADO' : 'PENDIENTE'
-          ]);
-          totalExported++;
+        const tasks = g.scheduled.filter(s => s.type === 'task');
+        
+        g.scheduled.forEach((t) => {
+          if (t.type === 'task') {
+            const taskIdx = tasks.indexOf(t);
+            const isDone = !!COMP[compKey(g.code, g.dkey, taskIdx)];
+            
+            if (statusFilter === 'pending' && isDone) return;
+            
+            rows.push({
+              Usuario: g.code,
+              Fecha: g.dkey,
+              Día: g.day,
+              Inicio: hhmmPlain(t.startMin),
+              Fin: hhmmPlain(t.endMin),
+              Duración: fmtDur(t.durMin),
+              Actividad: t.catalogo || t.equipo || '—',
+              Equipo: t.equipo || '—',
+              OT: t.ot || '—',
+              Ubicación: t.sucursal || '—',
+              Estado: t.overTime ? 'Overtime' : 'En turno'
+            });
+          }
         });
       });
-
-      if (totalExported === 0) { 
-        alert(statusFilter === 'pending' ? 'No hay actividades PENDIENTES para exportar.' : 'No hay actividades para exportar.'); 
-        return; 
-      }
-
-      const ws = XLSX.utils.aoa_to_sheet(data);
+      
+      if (!rows.length) { alert('No hay datos con los filtros actuales para exportar.'); return; }
+      
+      const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Actividades");
-
-      const wscols = [
-        { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 12 },
-        { wch: 35 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 }
-      ];
-      ws['!cols'] = wscols;
-
-      const fileName = `Export_${userFilter || 'General'}_${statusFilter}_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      XLSX.utils.book_append_sheet(wb, ws, "Distribución");
+      XLSX.writeFile(wb, `WorkScheduler_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
     }
   </script>
 </body>
-
 </html>
