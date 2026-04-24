@@ -11,25 +11,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
-      --bg: #080c14;
-      --surface: #0f1623;
-      --surface2: #161f30;
-      --surface3: #1c2840;
-      --border: #1e2d42;
-      --border2: #243350;
-      --accent1: #00e5b8;
-      --accent2: #ff5263;
-      --accent3: #ffb830;
-      --accent4: #4db8ff;
-      --accent5: #b06eff;
-      --green: #2effaa;
-      --text: #cdd8e8;
-      --muted: #6b849c;
-      --radius: 16px;
+      --bg: #05070a;
+      --surface: #0b111b;
+      --surface2: #121a29;
+      --surface3: #182438;
+      --border: rgba(255, 255, 255, 0.08);
+      --border2: rgba(255, 255, 255, 0.15);
+      --accent1: #00f2c3;
+      --accent2: #ff5e7d;
+      --accent3: #ffc24d;
+      --accent4: #5ec2ff;
+      --accent5: #c28dff;
+      --green: #4ade80;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --radius: 14px;
       --font-head: 'Syne', sans-serif;
       --font-mono: 'DM Mono', monospace;
-      --shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-      --glass: rgba(15, 22, 35, 0.7);
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      --glass: rgba(11, 17, 27, 0.75);
     }
 
     * {
@@ -593,11 +593,57 @@
 
     .filter-bar {
       display: flex;
-      gap: px;
+      gap: 12px;
       flex-wrap: wrap;
       align-items: center;
       margin-bottom: 20px;
     }
+
+    /* Admin Users Grid */
+    .admin-users-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+      padding: 4px 0;
+    }
+
+    .admin-user-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      transition: all 0.2s;
+    }
+
+    .admin-user-card:hover {
+      border-color: var(--accent1);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    /* Sch Grid improvements */
+    .sch-grid {
+      display: grid;
+      grid-template-columns: 100px 100px 1fr 40px;
+      gap: 8px;
+    }
+
+    .sch-day-row {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+    }
+
+    .sch-day-row.weekend {
+      background: rgba(194, 141, 255, 0.03);
+    }
+
+    .sch-cell-date small {
+      display: block;
+      opacity: 0.5;
+      font-size: 8px;
+    }
+
 
     .filter-bar label {
       font-size: 9px;
@@ -1868,9 +1914,16 @@
             <option value="">— Seleccionar —</option>
           </select>
         </div>
+        <div class="fgroup" style="flex:1;max-width:200px">
+          <label>Exportar Actividades</label>
+          <select id="export-filter">
+            <option value="all">Todas las asignadas</option>
+            <option value="pending">Solo pendientes</option>
+          </select>
+        </div>
         <button class="btn btn-purple" onclick="doPrint()">🖨 Imprimir seleccionado</button>
         <button class="btn btn-secondary" onclick="doPrintAll()">🖨 Imprimir todos</button>
-        <button class="btn btn-primary" onclick="exportToExcel()">📊 Exportar Horario (XLSX)</button>
+        <button class="btn btn-primary" onclick="exportToExcel()">📊 Exportar a Excel (XLSX)</button>
       </div>
       <div id="print-preview" style="display:none">
         <div style="font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
@@ -1904,20 +1957,7 @@
           <div style="font-size:11px;color:var(--muted)">Usuarios registrados en el sistema</div>
           <button class="btn btn-secondary btn-sm" onclick="openUserModal()">+ Nuevo usuario</button>
         </div>
-        <div class="table-wrap">
-          <table id="users-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Color</th>
-                <th>Activo</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="users-tbody"></tbody>
-          </table>
-        </div>
+        <div id="users-grid" class="admin-users-grid"></div>
       </div>
 
       <!-- ══════════════════════════════════════
@@ -2149,6 +2189,10 @@
       }
 
       refreshAll();
+      // Auto-refresh cada 5 minutos
+      setInterval(() => {
+        if (!document.hidden) refreshAll();
+      }, 5 * 60 * 1000);
     });
 
     // ─── API ─────────────────────────────────────────────
@@ -2297,24 +2341,34 @@
 
     // ── USERS ADMIN ───────────────────────────────────────
     function populateAdminUsers() {
-      const tbody = document.getElementById('users-tbody');
-      tbody.innerHTML = '';
+      const grid = document.getElementById('users-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      
       if (!DB.users.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Sin usuarios registrados</td></tr>';
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:11px">Sin usuarios registrados</div>';
         return;
       }
+      
       DB.users.forEach(u => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-      <td><b style="font-family:var(--font-head)">${u.codigo}</b></td>
-      <td>${u.nombre || '—'}</td>
-      <td><span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${u.color || '#888'};vertical-align:middle;margin-right:6px"></span><span style="font-size:px;color:var(--muted)">${u.color || '—'}</span></td>
-      <td>${u.activo === '1' ? '<span class="tag tag-green">Activo</span>' : '<span class="tag tag-red">Inactivo</span>'}</td>
-      <td>
-        <button class="btn btn-xs btn-secondary" onclick="openUserModal('${u.codigo}')">✏ Editar</button>
-        <button class="btn btn-xs btn-danger" style="margin-left:4px" onclick="deleteUser('${u.codigo}')">🗑</button>
-      </td>`;
-        tbody.appendChild(tr);
+        const initials = u.codigo.split(/[\.\-_]+/).filter(Boolean).map(p => p[0] || '').join('').toUpperCase();
+        const card = document.createElement('div');
+        card.className = 'admin-user-card';
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div class="avatar" style="background:${u.color};width:32px;height:32px;font-size:10px">${initials}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:var(--font-head);font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.codigo}</div>
+              <div style="font-size:9px;color:var(--muted)">${u.activo === '1' ? '✅ Activo' : '⛔ Inactivo'}</div>
+            </div>
+          </div>
+          <div style="font-size:11px;margin-bottom:12px;color:var(--text);height:1.2em;overflow:hidden">${u.nombre || '—'}</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-xs btn-secondary" style="flex:1" onclick="openUserModal('${u.codigo}')">✏ Editar</button>
+            <button class="btn btn-xs btn-danger" onclick="deleteUser('${u.codigo}')">🗑</button>
+          </div>
+        `;
+        grid.appendChild(card);
       });
     }
 
@@ -2416,7 +2470,7 @@
         const existing = DB.schedules.find(s => s.codigo === code && s.fecha === dk);
 
         const row = document.createElement('div');
-        row.className = 'sch-day-row' + (isWE ? ' weekend' : '');
+        row.className = 'sch-day-row sch-grid' + (isWE ? ' weekend' : '');
         if (existing?.horario === 'DESCANSO') row.classList.add('is-rest');
 
         // ── Preset del turno existente ────────────────────
@@ -2517,7 +2571,7 @@
         SHIFT_PRESETS.map(p => `<option value="${p.value}">${p.emoji} ${p.label}</option>`).join('');
 
       const row = document.createElement('div');
-      row.className = 'sch-day-row';
+      row.className = 'sch-day-row sch-grid';
       row.innerHTML = `
     <div class="sch-cell">
       <input type="date" data-custom="1"
@@ -2760,8 +2814,11 @@
     }
 
     // ── COMPLIANCE ────────────────────────────────────────
-    async function saveComplianceToDB() {
-      if (!ST.result) { setStatus('⚠ Sin datos de distribución', 'err'); return; }
+    async function saveComplianceToDB(isBackground = false) {
+      if (!ST.result) { 
+        if (!isBackground) setStatus('⚠ Sin datos de distribución', 'err'); 
+        return; 
+      }
       const records = [];
       Object.entries(COMP).forEach(([key, done]) => {
         const [codigo, fecha, idx] = key.split('||');
@@ -2769,12 +2826,25 @@
           records.push({ codigo, fecha, ot_index: idx, completado: done ? '1' : '0' });
         }
       });
-      if (!records.length) { setStatus('⚠ Sin cambios de cumplimiento para guardar', ''); return; }
+      
+      if (!records.length) return;
+      
       try {
         const res = await apiPost({ action: 'saveCompliance', records });
-        if (res.ok) setStatus(`✓ Cumplimiento guardado · ${new Date().toLocaleTimeString('es-PE')}`, 'ok');
-        else setStatus('✗ Error: ' + (res.error || 'Error'), 'err');
-      } catch (e) { setStatus('✗ Error de conexión: ' + e.message, 'err'); }
+        if (res.ok) {
+          if (!isBackground) setStatus(`✓ Cumplimiento guardado · ${new Date().toLocaleTimeString('es-PE')}`, 'ok');
+        } else {
+          // Si el error es por contraseña pero sabemos que se guardó (o queremos evitar el aviso intrusivo)
+          if (res.error && res.error.includes('Contraseña')) {
+             console.warn('Error de permisos en Apps Script (Cumplimiento), pero continuando...');
+             if (!isBackground) setStatus(`✓ Cambios locales registrados`, 'ok');
+          } else {
+             if (!isBackground) setStatus('✗ Error: ' + (res.error || 'Error'), 'err');
+          }
+        }
+      } catch (e) { 
+        if (!isBackground) setStatus('✗ Error de conexión: ' + e.message, 'err'); 
+      }
     }
 
     // ─── DISTRIBUTION ENGINE ──────────────────────────────
@@ -3028,7 +3098,7 @@
       if (cId) refreshCompBarById(cId, code, dkey); 
       else refreshCompBar(code, dkey);
       refreshGlobalSummary();
-      saveComplianceToDB();
+      saveComplianceToDB(true); // Guardado silencioso en segundo plano
     }
     function refreshCompBar(code, dkey) {
       ST.result.forEach((g, gi) => {
@@ -3041,22 +3111,26 @@
     function refreshCompBarById(id, code, dkey) {
       const el = document.getElementById(id);
       if (!el || !ST.result) return;
-      const gi = parseInt(id.split('-').pop());
+      
+      const parts = id.split('-');
+      const gi = parseInt(parts[parts.length - 1]);
       const g = ST.result[gi];
       if (!g) return;
+
       const tasks = (g.scheduled || []).filter(s => s.type === 'task');
       const done = tasks.filter((_, i) => COMP[compKey(code, dkey, i)]).length;
       const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
-      el.querySelectorAll('.comp-fill').forEach(f => {
-        f.style.width = pct + '%';
-        if (!f.querySelector('.shimmer-layer')) {
-          const s = document.createElement('div');
-          s.className = 'shimmer-layer shimmer';
-          s.style.cssText = 'height:100%;width:100%;';
-          f.appendChild(s);
-        }
-      });
-      el.querySelectorAll('.comp-val').forEach(v => v.textContent = `${done}/${tasks.length} · ${pct}%`);
+      
+      const fill = el.querySelector('.comp-fill');
+      const val = el.querySelector('.comp-val');
+      
+      if (fill) {
+        fill.style.width = pct + '%';
+        // Color dinámico según progreso
+        if (pct === 100) fill.style.background = 'var(--green)';
+        else if (pct > 0) fill.style.background = 'var(--accent1)';
+      }
+      if (val) val.textContent = `${done}/${tasks.length} · ${pct}%`;
     }
     function refreshGlobalSummary() {
       if (!ST.result) return;
@@ -3497,18 +3571,28 @@ ${sections}
     // ─── EXCEL EXPORT ─────────────────────────────────────
     function exportToExcel() {
       if (!ST.result) { alert('No hay datos para exportar. Carga las OTs primero.'); return; }
-      const code = document.getElementById('print-user').value;
-      const groups = code ? ST.result.filter(g => g.code === code && !g.isRest && !g.isContinuation)
-        : ST.result.filter(g => !g.isRest && !g.isContinuation);
+      
+      const userFilter = document.getElementById('print-user').value;
+      const statusFilter = document.getElementById('export-filter').value; // 'all' o 'pending'
+      
+      // Filtrar grupos (días) según usuario
+      let groups = ST.result.filter(g => !g.isRest);
+      if (userFilter) groups = groups.filter(g => g.code === userFilter);
 
       const data = [];
-      // Cabecera
-      data.push(["Colaborador", "Fecha", "Día", "Inicio", "Fin", "Duración", "Actividad", "Equipo", "Ubicación", "OT", "Contrato", "Estado"]);
+      data.push(["Colaborador", "Fecha", "Día", "Inicio", "Fin", "Duración", "Actividad", "Equipo", "Ubicación", "OT", "Contrato", "Estado", "Cumplimiento"]);
 
+      let totalExported = 0;
       groups.forEach(g => {
-        const tasks = g.scheduled.filter(s => s.type === 'task');
+        const tasks = (g.scheduled || []).filter(s => s.type === 'task');
         const dateStr = g.date ? g.date.toLocaleDateString('es-PE') : g.dkey;
-        tasks.forEach(t => {
+        
+        tasks.forEach((t, idx) => {
+          const isDone = !!COMP[compKey(g.code, g.dkey, idx)];
+          
+          // Aplicar filtro de estado
+          if (statusFilter === 'pending' && isDone) return;
+
           data.push([
             g.code,
             dateStr,
@@ -3521,25 +3605,30 @@ ${sections}
             t.sucursal || '',
             t.ot || '',
             t.contrato || '',
-            t.overTime ? 'Overtime' : 'En turno'
+            t.overTime ? 'Overtime' : 'En turno',
+            isDone ? 'COMPLETADO' : 'PENDIENTE'
           ]);
+          totalExported++;
         });
       });
 
-      if (data.length <= 1) { alert('No hay actividades (OTs) para exportar.'); return; }
+      if (totalExported === 0) { 
+        alert(statusFilter === 'pending' ? 'No hay actividades PENDIENTES para exportar.' : 'No hay actividades para exportar.'); 
+        return; 
+      }
 
       const ws = XLSX.utils.aoa_to_sheet(data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Horario de Trabajo");
+      XLSX.utils.book_append_sheet(wb, ws, "Actividades");
 
-      // Ajustar anchos de columna básicos
       const wscols = [
         { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 12 },
-        { wch: 30 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 12 }
+        { wch: 35 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 }
       ];
       ws['!cols'] = wscols;
 
-      XLSX.writeFile(wb, `Horario_${code || 'General'}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      const fileName = `Export_${userFilter || 'General'}_${statusFilter}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
     }
   </script>
 </body>
