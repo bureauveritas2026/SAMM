@@ -604,25 +604,32 @@
       width: 8px;
       height: 8px;
     }
+
     ::-webkit-scrollbar-track {
       background: var(--bg);
     }
+
     ::-webkit-scrollbar-thumb {
       background: var(--surface3);
       border-radius: 10px;
       border: 2px solid var(--bg);
     }
+
     ::-webkit-scrollbar-thumb:hover {
       background: var(--muted);
     }
 
     /* Progress Bar Transitions */
-    .comp-fill, .gcomp-bar-fill, .mbar-fill {
+    .comp-fill,
+    .gcomp-bar-fill,
+    .mbar-fill {
       transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
     }
 
     /* Glassmorphism Refinement */
-    .card, .ucard, .modal {
+    .card,
+    .ucard,
+    .modal {
       backdrop-filter: blur(16px) saturate(180%);
       -webkit-backdrop-filter: blur(16px) saturate(180%);
     }
@@ -631,19 +638,22 @@
     .ucard {
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
     }
+
     .ucard:hover {
       transform: translateY(-5px) scale(1.01);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-      border-color: rgba(255,255,255,0.2) !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      border-color: rgba(255, 255, 255, 0.2) !important;
     }
 
     /* Checkbox Animations */
     .check-box {
       transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     .check-box.done {
       transform: scale(1.1);
     }
+
     /* Admin Users Grid */
     .admin-users-grid {
       display: grid;
@@ -1290,12 +1300,17 @@
     }
 
     @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
     }
 
     .shimmer {
-      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 100%);
       background-size: 200% 100%;
       animation: shimmer 2.5s infinite linear;
     }
@@ -2077,7 +2092,8 @@
           </div>
 
           <!-- Cabecera columnas -->
-          <div class="sch-week-header" style="border-radius:12px 12px 0 0;border:1px solid var(--border);border-bottom:1px solid var(--border)">
+          <div class="sch-week-header"
+            style="border-radius:12px 12px 0 0;border:1px solid var(--border);border-bottom:1px solid var(--border)">
             <span>Fecha</span>
             <span>Día</span>
             <span>Turno</span>
@@ -2386,12 +2402,12 @@
       const grid = document.getElementById('users-grid');
       if (!grid) return;
       grid.innerHTML = '';
-      
+
       if (!DB.users.length) {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:11px">Sin usuarios registrados</div>';
         return;
       }
-      
+
       DB.users.forEach(u => {
         const initials = u.codigo.split(/[\.\-_]+/).filter(Boolean).map(p => p[0] || '').join('').toUpperCase();
         const card = document.createElement('div');
@@ -2856,9 +2872,9 @@
 
     // ── COMPLIANCE ────────────────────────────────────────
     async function saveComplianceToDB(isBackground = false) {
-      if (!ST.result) { 
-        if (!isBackground) setStatus('⚠ Sin datos de distribución', 'err'); 
-        return; 
+      if (!ST.result) {
+        if (!isBackground) setStatus('⚠ Sin datos de distribución', 'err');
+        return;
       }
       const records = [];
       Object.entries(COMP).forEach(([key, done]) => {
@@ -2867,27 +2883,27 @@
           records.push({ codigo, fecha, ot_index: idx, completado: done ? '1' : '0' });
         }
       });
-      
+
       if (!records.length) return;
-      
+
       try {
         if (!isBackground) setStatus('💾 Guardando cumplimiento...', 'ok');
-        const res = await apiPost({ action: 'saveCompliance', records: records.map(r => ({...r, ot_index: parseInt(r.ot_index)})) });
+        const res = await apiPost({ action: 'saveCompliance', records: records.map(r => ({ ...r, ot_index: parseInt(r.ot_index) })) });
         if (res.ok) {
           if (!isBackground) setStatus(`✓ Cumplimiento guardado · ${new Date().toLocaleTimeString('es-PE')}`, 'ok');
         } else {
           if (res.error && (res.error.includes('Contraseña') || res.error.includes('password'))) {
-             if (!isBackground) {
-               setStatus('✗ Error de permisos (Login requerido)', 'err');
-               alert('Tu sesión de administrador ha expirado o no has iniciado sesión. Por favor, ve a la pestaña Admin para ingresar la contraseña.');
-             }
-             console.warn('Error de permisos en Apps Script (Cumplimiento)');
+            if (!isBackground) {
+              setStatus('✗ Error de permisos (Login requerido)', 'err');
+              alert('Tu sesión de administrador ha expirado o no has iniciado sesión. Por favor, ve a la pestaña Admin para ingresar la contraseña.');
+            }
+            console.warn('Error de permisos en Apps Script (Cumplimiento)');
           } else {
-             if (!isBackground) setStatus('✗ Error al guardar: ' + (res.error || 'Error'), 'err');
+            if (!isBackground) setStatus('✗ Error al guardar: ' + (res.error || 'Error'), 'err');
           }
         }
-      } catch (e) { 
-        if (!isBackground) setStatus('✗ Error de conexión: ' + e.message, 'err'); 
+      } catch (e) {
+        if (!isBackground) setStatus('✗ Error de conexión: ' + e.message, 'err');
       }
     }
 
@@ -2938,7 +2954,7 @@
           const date = entry.date;
           const dkey = entry.dateKey;
           const common = { code, color, uName: uInfo?.nombre || code, date, dkey, day: DAYS_ES[date.getDay()] };
-          
+
           const contsForToday = [...pendingConts];
           pendingConts = [];
 
@@ -2965,7 +2981,7 @@
           remaining = remaining.slice(fittingCount);
 
           const result = assignTasks(entry.start, entry.end, dayTasks.map(t => ({ ...t })));
-          
+
           if (entry.overnight) {
             allGroups.push({
               ...common, slotStart: entry.start, slotEnd: entry.end,
@@ -3032,7 +3048,7 @@
       populatePrintUsers();
       populateFilters();
     }
-// ─── SCHEDULING ENGINE ────────────────────────────────
+    // ─── SCHEDULING ENGINE ────────────────────────────────
     function buildFreeSlots(shiftStart, shiftEnd) {
       const mealCandidates = [...MEALS];
       if (shiftEnd > 1440) MEALS.forEach(m => mealCandidates.push({ ...m, start: m.start + 1440, end: m.end + 1440 }));
@@ -3061,7 +3077,7 @@
         while (taskQueue.length > 0) {
           const transit = firstInSlot ? 0 : TRANSIT_MIN; const task = taskQueue[0];
           const available = slotEnd - cursor;
-          
+
           // ── Límite de 8 horas (480 min) ──
           if (usedWork + task.durMin > 480) {
             break; // No asignar más tareas a este día
@@ -3140,7 +3156,7 @@
     function toggleTask(code, dkey, idx) {
       const key = compKey(code, dkey, idx);
       COMP[key] = !COMP[key];
-      
+
       // Actualizar visualmente todos los checkboxes que coincidan con esta tarea
       document.querySelectorAll(`[data-ckey="${key}"]`).forEach(wrap => {
         const done = COMP[key];
@@ -3163,10 +3179,10 @@
         const tasks = ST.result.find(g => g.code === code && g.dkey === dkey)?.scheduled?.filter(s => s.type === 'task') || [];
         const done = tasks.filter((_, i) => COMP[compKey(code, dkey, i)]).length;
         const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
-        
+
         const fill = bar.querySelector('.comp-fill');
         const val = bar.querySelector('.comp-val');
-        
+
         if (fill) {
           fill.style.width = pct + '%';
           fill.style.background = pct === 100 ? 'var(--green)' : pct > 0 ? 'var(--accent1)' : 'var(--border2)';
@@ -3177,7 +3193,7 @@
     function refreshCompBarById(id, code, dkey) {
       const el = document.getElementById(id);
       if (!el || !ST.result) return;
-      
+
       const parts = id.split('-');
       const gi = parseInt(parts[parts.length - 1]);
       const g = ST.result[gi];
@@ -3186,10 +3202,10 @@
       const tasks = (g.scheduled || []).filter(s => s.type === 'task');
       const done = tasks.filter((_, i) => COMP[compKey(code, dkey, i)]).length;
       const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
-      
+
       const fill = el.querySelector('.comp-fill');
       const val = el.querySelector('.comp-val');
-      
+
       if (fill) {
         fill.style.width = pct + '%';
         // Color dinámico según progreso
@@ -3290,7 +3306,7 @@
         card.dataset.dkey = g.dkey;
         card.style.borderLeft = `4px solid ${g.color}`;
         if (g.isContinuation) card.style.background = `rgba(0, 0, 0, 0.15)`;
-        
+
         card.innerHTML = `
       <div class="uhead">
         <div class="avatar" style="background:${g.color}">${initials}</div>
@@ -3308,7 +3324,7 @@
           if (isT) taskIdx = taskItems.indexOf(item);
           const ckey = isT ? compKey(g.code, g.dkey, taskIdx) : '';
           const done = isT && COMP[ckey];
-          
+
           return `
         <div class="sched-item ${isT && done ? 'is-done' : ''} ${item.type === 'transit' ? 'is-transit' : ''} ${item.type === 'break' ? 'is-break' : ''}">
           <div class="si-time" style="color:${g.isContinuation ? 'var(--accent5)' : 'var(--accent1)'}">${hhmm(item.startMin)}</div>
@@ -3439,7 +3455,7 @@
         const dateStr = g.date ? g.date.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' }) : g.dkey;
         const doneCount = tasks.filter((_, i) => COMP[compKey(g.code, g.dkey, i)]).length;
         const pct = tasks.length ? Math.round(doneCount / tasks.length * 100) : 0;
-        
+
         const taskRows = tasks.map((t, i) => {
           const key = compKey(g.code, g.dkey, i); const done = !!COMP[key];
           return `
@@ -3614,24 +3630,27 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
       if (!ST.result) { alert('Sin datos para exportar'); return; }
       const userFilter = document.getElementById('print-user').value;
       const statusFilter = document.getElementById('export-filter').value;
-      
+
       const rows = [];
       ST.result.forEach((g) => {
         if (g.isRest || !g.scheduled) return;
         if (userFilter && g.code !== userFilter) return;
-        
+
         const tasks = g.scheduled.filter(s => s.type === 'task');
-        
+
         g.scheduled.forEach((t) => {
           if (t.type === 'task') {
             const taskIdx = tasks.indexOf(t);
             const isDone = !!COMP[compKey(g.code, g.dkey, taskIdx)];
-            
+
             if (statusFilter === 'pending' && isDone) return;
+
+            // Forzamos el formato dd/mm/yyyy como texto puro para evitar que Excel lo auto-formatee
+            const fechaTxt = formatDateES(g.dkey);
             
             rows.push({
               Usuario: g.code,
-              Fecha: formatDateES(g.dkey),
+              Fecha: "\u200B" + String(fechaTxt), // El carácter \u200B (espacio de ancho cero) fuerza a que sea tratado como texto
               Día: g.day,
               Inicio: hhmmPlain(t.startMin),
               Fin: hhmmPlain(t.endMin),
@@ -3645,9 +3664,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
           }
         });
       });
-      
+
       if (!rows.length) { alert('No hay datos con los filtros actuales para exportar.'); return; }
-      
+
       const ws = XLSX.utils.json_to_sheet(rows, { raw: true });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Distribución");
@@ -3655,4 +3674,5 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
     }
   </script>
 </body>
+
 </html>
