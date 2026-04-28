@@ -2871,16 +2871,19 @@
       if (!records.length) return;
       
       try {
-        const res = await apiPost({ action: 'saveCompliance', records });
+        if (!isBackground) setStatus('💾 Guardando cumplimiento...', 'ok');
+        const res = await apiPost({ action: 'saveCompliance', records: records.map(r => ({...r, ot_index: parseInt(r.ot_index)})) });
         if (res.ok) {
           if (!isBackground) setStatus(`✓ Cumplimiento guardado · ${new Date().toLocaleTimeString('es-PE')}`, 'ok');
         } else {
-          // Si el error es por contraseña pero sabemos que se guardó (o queremos evitar el aviso intrusivo)
-          if (res.error && res.error.includes('Contraseña')) {
-             console.warn('Error de permisos en Apps Script (Cumplimiento), pero continuando...');
-             if (!isBackground) setStatus(`✓ Cambios locales registrados`, 'ok');
+          if (res.error && (res.error.includes('Contraseña') || res.error.includes('password'))) {
+             if (!isBackground) {
+               setStatus('✗ Error de permisos (Login requerido)', 'err');
+               alert('Tu sesión de administrador ha expirado o no has iniciado sesión. Por favor, ve a la pestaña Admin para ingresar la contraseña.');
+             }
+             console.warn('Error de permisos en Apps Script (Cumplimiento)');
           } else {
-             if (!isBackground) setStatus('✗ Error: ' + (res.error || 'Error'), 'err');
+             if (!isBackground) setStatus('✗ Error al guardar: ' + (res.error || 'Error'), 'err');
           }
         }
       } catch (e) { 
@@ -3645,7 +3648,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
       
       if (!rows.length) { alert('No hay datos con los filtros actuales para exportar.'); return; }
       
-      const ws = XLSX.utils.json_to_sheet(rows);
+      const ws = XLSX.utils.json_to_sheet(rows, { raw: true });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Distribución");
       XLSX.writeFile(wb, `WorkScheduler_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
