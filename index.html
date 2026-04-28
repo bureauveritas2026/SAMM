@@ -599,7 +599,6 @@
       margin-bottom: 20px;
     }
 
-<<<<<<< HEAD
     /* Professional Scrollbar */
     ::-webkit-scrollbar {
       width: 8px;
@@ -645,9 +644,6 @@
     .check-box.done {
       transform: scale(1.1);
     }
-
-=======
->>>>>>> e399ceb75bfbeb0204b36c53af044389282b67bd
     /* Admin Users Grid */
     .admin-users-grid {
       display: grid;
@@ -2235,17 +2231,10 @@
       }
 
       refreshAll();
-<<<<<<< HEAD
       // Auto-refresh cada 2 minutos para mejorar la sensación de "tiempo real"
       setInterval(() => {
         if (!document.hidden) refreshAll();
       }, 2 * 60 * 1000);
-=======
-      // Auto-refresh cada 5 minutos
-      setInterval(() => {
-        if (!document.hidden) refreshAll();
-      }, 5 * 60 * 1000);
->>>>>>> e399ceb75bfbeb0204b36c53af044389282b67bd
     });
 
     // ─── API ─────────────────────────────────────────────
@@ -3639,11 +3628,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
             
             rows.push({
               Usuario: g.code,
-<<<<<<< HEAD
               Fecha: formatDateES(g.dkey),
-=======
-              Fecha: g.dkey,
->>>>>>> e399ceb75bfbeb0204b36c53af044389282b67bd
               Día: g.day,
               Inicio: hhmmPlain(t.startMin),
               Fin: hhmmPlain(t.endMin),
