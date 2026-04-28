@@ -3645,12 +3645,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
 
             if (statusFilter === 'pending' && isDone) return;
 
-            // Forzamos el formato dd/mm/yyyy como texto puro para evitar que Excel lo auto-formatee
-            const fechaTxt = formatDateES(g.dkey);
-            
             rows.push({
               Usuario: g.code,
-              Fecha: "\u200B" + String(fechaTxt), // El carácter \u200B (espacio de ancho cero) fuerza a que sea tratado como texto
+              Fecha: formatDateES(g.dkey), 
               Día: g.day,
               Inicio: hhmmPlain(t.startMin),
               Fin: hhmmPlain(t.endMin),
@@ -3667,7 +3664,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
 
       if (!rows.length) { alert('No hay datos con los filtros actuales para exportar.'); return; }
 
-      const ws = XLSX.utils.json_to_sheet(rows, { raw: true });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      
+      // SOLUCIÓN DEFINITIVA: Forzamos a que SheetJS trate CADA celda como texto puro ('s')
+      // Esto ignora cualquier intento de Excel de convertir "03/04/2026" a una fecha larga.
+      for (let cell in ws) {
+        if (ws[cell] && ws[cell].v !== undefined) {
+          ws[cell].t = 's'; // Forzar tipo String
+        }
+      }
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Distribución");
       XLSX.writeFile(wb, `WorkScheduler_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
