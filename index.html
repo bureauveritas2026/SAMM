@@ -2888,7 +2888,7 @@
       loadScheduleTable(); // refresca el grid
     }
 
-    // ── OT FILE PROCESSING ────────────────────────────────
+    // ── OT FILE PROCESSING (con deduplicación contra la DB) ──
     function handleOTFile(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -2898,6 +2898,12 @@
       infoEl.style.display = 'none';
       document.getElementById('btn-upload-ots').disabled = true;
       _processedOTs = null;
+
+      // OTs que YA existen en la base (usuario + código OT), para no
+      // duplicarlas ni alterar el horario ya asignado a las que están.
+      const existingOTKeys = new Set(
+        DB.ots.map(o => normCode(o.codigo_usuario) + '||' + String(o.codigo_ot || '').trim())
+      );
 
       const reader = new FileReader();
       reader.onload = e => {
@@ -2940,6 +2946,7 @@
           _processedOTs = [];
 
           const processedCodes = new Set();
+          let skippedExisting = 0;
           validRows.forEach((row, idx) => {
             const codUser = String(row[0] || '').trim().toUpperCase();
             if (!codUser) return;
@@ -2948,9 +2955,14 @@
             const ot2 = String(row[28] || '').trim();
             const codigoOT = [ot1, ot2].filter(Boolean).join(' - ') || `OT-${idx + 1}`;
 
-            // ── Deduplicación: Evitar códigos OT repetidos en el mismo lote ──
+            // ── Deduplicación dentro del mismo archivo ──
             if (processedCodes.has(codigoOT)) return;
             processedCodes.add(codigoOT);
+
+            // ── Deduplicación contra OTs ya guardadas en la base ──
+            // Así el horario ya asignado a esa OT no se toca ni se duplica.
+            const globalKey = codUser + '||' + codigoOT;
+            if (existingOTKeys.has(globalKey)) { skippedExisting++; return; }
 
             let ubicacion = '';
             if (numCols >= 86) ubicacion = String(row[85] || '').trim();
@@ -2987,13 +2999,16 @@
           });
 
           const userList = Object.entries(byUser).sort((a, b) => b[1] - a[1]);
-          userList.forEach(([u, c]) => otLog('ok', `  → ${u}: ${c} OT${c !== 1 ? 's' : ''}`));
-          otLog('ok', `📊 Total procesadas: ${_processedOTs.length} OTs (se omitieron duplicados) · ${userList.length} técnico(s)`);
+          userList.forEach(([u, c]) => otLog('ok', `  → ${u}: ${c} OT${c !== 1 ? 's' : ''} nueva(s)`));
+          otLog('ok', `📊 Total nuevas: ${_processedOTs.length} OTs · ${userList.length} técnico(s)`);
+          if (skippedExisting > 0) otLog('warn', `⚠ ${skippedExisting} OT(s) omitida(s) por ya existir en la base (no se duplican ni se altera su horario ya asignado)`);
 
           if (numCols < 86) otLog('warn', `⚠ Archivo tiene ${numCols} columnas. Columna 86 (ubicación) no disponible.`);
           if (numCols < 81) otLog('warn', `⚠ Columna 81 (equipo) no disponible.`);
           if (_processedOTs.length === 0) {
-            otLog('err', '✗ No se procesaron OTs. Verifica que la columna 1 tenga códigos de usuario.');
+            otLog(skippedExisting > 0 ? 'warn' : 'err', skippedExisting > 0
+              ? '✓ No hay OTs nuevas: todas ya existían en la base.'
+              : '✗ No se procesaron OTs. Verifica que la columna 1 tenga códigos de usuario.');
             return;
           }
 
@@ -3088,7 +3103,8 @@
       }
     }
 
-    // ─── DISTRIBUTION ENGINE ──────────────────────────────
+    // ─── DISTRIBUTION ENGINE (mejorado: rellena mejor los días
+    // disponibles y no duplica/mueve lo ya asignado) ──────────
     function buildDistribution() {
       const schByCode = {};
       getEffectiveSchedules().forEach(s => {
@@ -3156,12 +3172,11 @@
             return;
           }
 
-          const trial = assignTasks(entry.start, entry.end, remaining.map(t => ({ ...t })));
-          const fittingCount = trial.scheduled.filter(s => s.type === 'task' && !s.overTime).length;
-          const dayTasks = remaining.slice(0, fittingCount);
-          remaining = remaining.slice(fittingCount);
-
-          const result = assignTasks(entry.start, entry.end, dayTasks.map(t => ({ ...t })));
+          // Llena este día al máximo con lo que quede pendiente en la cola,
+          // sin saltarse tareas que sí caben solo por venir después en la lista.
+          const result = assignTasks(entry.start, entry.end, remaining);
+          remaining = result.leftover;
+          const dayTasksAll = result.scheduled.filter(s => s.type === 'task');
 
           if (entry.overnight) {
             allGroups.push({
@@ -3170,7 +3185,7 @@
               ...result,
               scheduled: result.scheduled.filter(s => s.endMin <= 1440),
               taskCount: result.scheduled.filter(s => s.type === 'task' && s.endMin <= 1440).length,
-              otItems: dayTasks,
+              otItems: dayTasksAll,
             });
             pendingConts = result.scheduled.filter(s => s.endMin > 1440);
           } else {
@@ -3178,7 +3193,7 @@
               ...common, slotStart: entry.start, slotEnd: entry.end,
               hasSched: true, isRest: false, overnight: false,
               ...result,
-              taskCount: dayTasks.length, otItems: dayTasks,
+              taskCount: dayTasksAll.length, otItems: dayTasksAll,
             });
           }
         });
@@ -3199,14 +3214,21 @@
           }
         }
 
+        // Excedente real: no hubo capacidad en NINGÚN día programado.
+        // Se muestra con fecha real (el día siguiente al último programado)
+        // y una etiqueta clara de advertencia, en vez de un bloque ambiguo.
         if (remaining.length > 0) {
+          const lastEntry = entries.length ? entries[entries.length - 1] : null;
+          const excDate = lastEntry ? new Date(lastEntry.date) : new Date();
+          if (lastEntry) excDate.setDate(excDate.getDate() + 1);
           allGroups.push({
             code, color, uName: DB.users.find(u => u.codigo === code)?.nombre || code,
-            date: null, dkey: 'exceso', day: 'EXTRA', slotStart: 480, slotEnd: 20,
-            hasSched: false, isRest: false, overnight: false,
+            date: excDate, dkey: dkStr(excDate), day: DAYS_ES[excDate.getDay()],
+            slotStart: 480, slotEnd: 480 + remaining.length * 75,
+            hasSched: false, isRest: false, overnight: false, isExcess: true,
             scheduled: remaining.map((t, i) => ({ type: 'task', ...t, startMin: 480 + i * 75, endMin: 480 + i * 75 + t.durMin, overTime: true })),
             overtime: remaining, usedWork: remaining.reduce((s, t) => s + t.durMin, 0),
-            totalFree: 540, pct: 0, taskCount: remaining.length, otItems: remaining,
+            totalFree: remaining.length * 75, pct: 0, taskCount: remaining.length, otItems: remaining,
           });
         }
       });
@@ -3248,39 +3270,56 @@
       return { slots, breaks };
     }
 
-    function assignTasks(shiftStart, shiftEnd, tasks) {
+    // assignTasks: llena cada bloque disponible del día revisando TODA
+    // la cola de tareas pendientes (no solo la primera), así ninguna
+    // actividad que sí cabe se pierde por venir detrás de otra más grande.
+    // Respeta el orden original: siempre intenta primero la tarea más
+    // antigua de la cola que quepa, así lo ya asignado se mantiene estable.
+    function assignTasks(shiftStart, shiftEnd, tasksIn) {
       const { slots, breaks } = buildFreeSlots(shiftStart, shiftEnd);
-      const scheduled = []; const slotsCopy = slots.map(s => ({ ...s })); let taskQueue = [...tasks];
+      const tasks = tasksIn.map(t => ({ ...t }));
+      const used = new Array(tasks.length).fill(false);
+      const scheduled = [];
       let usedWork = 0;
 
-      for (let si = 0; si < slotsCopy.length && taskQueue.length > 0; si++) {
-        let cursor = slotsCopy[si].start; const slotEnd = slotsCopy[si].end; let firstInSlot = true;
-        while (taskQueue.length > 0) {
-          const transit = firstInSlot ? 0 : TRANSIT_MIN; const task = taskQueue[0];
-          const available = slotEnd - cursor;
+      slots.forEach(slot => {
+        let cursor = slot.start;
+        let firstInSlot = true;
+        let placedSomething = true;
 
-          // ── Límite de 8 horas (480 min) ──
-          if (usedWork + task.durMin > 480) {
-            break; // No asignar más tareas a este día
+        while (placedSomething) {
+          placedSomething = false;
+          for (let i = 0; i < tasks.length; i++) {
+            if (used[i]) continue;
+            const task = tasks[i];
+            const transit = firstInSlot ? 0 : TRANSIT_MIN;
+            const available = slot.end - cursor;
+            if (usedWork + task.durMin > 480) continue; // límite de 8h/día
+            if (available >= transit + task.durMin) {
+              if (!firstInSlot) {
+                scheduled.push({ type: 'transit', name: '🚶 Tránsito entre áreas', startMin: cursor, endMin: cursor + TRANSIT_MIN, durMin: TRANSIT_MIN });
+                cursor += TRANSIT_MIN;
+              }
+              scheduled.push({ type: 'task', ...task, startMin: cursor, endMin: cursor + task.durMin, overTime: false });
+              cursor += task.durMin;
+              usedWork += task.durMin;
+              used[i] = true;
+              firstInSlot = false;
+              placedSomething = true;
+              break; // reinicia el barrido respetando la prioridad/orden original
+            }
           }
-
-          if (available >= transit + task.durMin) {
-            if (!firstInSlot) { scheduled.push({ type: 'transit', name: '🚶 Tránsito entre áreas', startMin: cursor, endMin: cursor + TRANSIT_MIN, durMin: TRANSIT_MIN }); cursor += TRANSIT_MIN; }
-            scheduled.push({ type: 'task', ...task, startMin: cursor, endMin: cursor + task.durMin, overTime: false });
-            cursor += task.durMin; usedWork += task.durMin; taskQueue.shift(); firstInSlot = false;
-          } else break;
         }
-      }
-      if (taskQueue.length > 0) {
-        let cursor = shiftEnd;
-        taskQueue.forEach(task => { scheduled.push({ type: 'task', ...task, startMin: cursor, endMin: cursor + task.durMin, overTime: true }); cursor += task.durMin; });
-      }
+      });
+
+      const leftover = tasks.filter((t, i) => !used[i]);
+
       breaks.forEach(b => scheduled.push({ type: 'break', name: b.name, startMin: b.start, endMin: b.end, durMin: b.end - b.start }));
       scheduled.sort((a, b) => a.startMin - b.startMin);
-      const finalUsedWork = scheduled.filter(s => s.type === 'task').reduce((s, t) => s + t.durMin, 0);
+
       const totalFree = slots.reduce((s, sl) => s + (sl.end - sl.start), 0);
-      const pct = Math.min(100, Math.round((finalUsedWork / Math.max(1, totalFree)) * 100));
-      return { scheduled, overtime: taskQueue, usedWork: finalUsedWork, totalFree, pct };
+      const pct = Math.min(100, Math.round((usedWork / Math.max(1, totalFree)) * 100));
+      return { scheduled, leftover, usedWork, totalFree, pct };
     }
 
     // ─── HELPERS ─────────────────────────────────────────
@@ -3495,11 +3534,11 @@
           <h3>${g.code}${g.isContinuation ? ' <small style="color:var(--accent5)">[CONTINUACIÓN]</small>' : ''}</h3>
           <p>${g.day} · ${dateStr}</p>
         </div>
-        ${!g.isRest ? `<span class="tag" style="margin-left:auto;background:${g.color}15;color:${g.color};border:1px solid ${g.color}30">${g.overnight ? '🌙 Nocturno' : '☀️ Turno'}</span>` : ''}
+        ${!g.isRest ? `<span class="tag" style="margin-left:auto;background:${g.isExcess ? '#ff526315' : g.color + '15'};color:${g.isExcess ? 'var(--accent2)' : g.color};border:1px solid ${g.isExcess ? '#ff526330' : g.color + '30'}">${g.isExcess ? '⚠ Sin horario disponible' : (g.overnight ? '🌙 Nocturno' : '☀️ Turno')}</span>` : ''}
         ${g.isAuto ? `<span class="tag tag-orange" style="margin-left:6px">🤖 Automático</span>` : ''}
       </div>
       <div class="day-sched">
-        <div class="day-title">${g.isRest ? '🛌 Día de Descanso' : (g.isContinuation ? '🌙 Término de turno anterior' : '📅 Actividades del día')}</div>
+        <div class="day-title">${g.isRest ? '🛌 Día de Descanso' : g.isExcess ? '⚠ Excedente — no cupo en los días con horario registrado' : (g.isContinuation ? '🌙 Término de turno anterior' : '📅 Actividades del día')}</div>
         ${items.map((item, ii) => {
           const isT = item.type === 'task';
           let taskIdx = -1;
@@ -3830,7 +3869,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
 
             rows.push({
               Usuario: g.code,
-              Fecha: formatDateES(g.dkey), 
+              Fecha: formatDateES(g.dkey),
               Día: g.day,
               Inicio: hhmmPlain(t.startMin),
               Fin: hhmmPlain(t.endMin),
@@ -3848,7 +3887,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
       if (!rows.length) { alert('No hay datos con los filtros actuales para exportar.'); return; }
 
       const ws = XLSX.utils.json_to_sheet(rows);
-      
+
       // SOLUCIÓN DEFINITIVA: Forzamos a que SheetJS trate CADA celda como texto puro ('s')
       // Esto ignora cualquier intento de Excel de convertir "03/04/2026" a una fecha larga.
       for (let cell in ws) {
