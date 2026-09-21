@@ -1839,6 +1839,17 @@
               <div class="upload-title">Excel de OTs</div>
               <div class="upload-sub">Arrastra o haz clic · <code>.xlsx</code> · <code>.xls</code></div>
             </div>
+            <div class="fgroup" style="margin-top:12px;margin-bottom:8px">
+              <label>Días de Descanso a ignorar (YYYY-MM-DD, separados por coma):</label>
+              <input type="text" id="ot-rest-days" placeholder="Ej: 2026-10-15, 2026-10-16">
+            </div>
+            <div class="fgroup" style="margin-bottom:12px">
+              <label>Distribución de OTs</label>
+              <select id="ot-spacing" onchange="loadAndBuild()">
+                <option value="consecutive">Consecutivo (Empaquetar al máximo por día)</option>
+                <option value="even">Equitativo (Distribuir uniformemente)</option>
+              </select>
+            </div>
             <div id="ot-col-info" class="col-info" style="display:none"></div>
             <div id="ot-log" class="process-log" style="display:none"></div>
             <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
@@ -3050,6 +3061,26 @@
           else { otLog('err', '✗ Error en lote: ' + (res.error || 'Error')); errCount++; }
         } catch (e) { otLog('err', '✗ Error de red: ' + e.message); errCount++; }
       }
+      
+      const restDaysStr = document.getElementById('ot-rest-days').value;
+      if (restDaysStr) {
+         const dates = restDaysStr.split(',').map(d => d.trim()).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+         if (dates.length > 0) {
+            otLog('info', 'Guardando días de descanso...');
+            const uniqueUsers = [...new Set(_processedOTs.map(o => o.codigo_usuario))];
+            let rOk = 0, rFail = 0;
+            for (const u of uniqueUsers) {
+               for (const d of dates) {
+                  try {
+                     const r = await apiPost({ action: 'saveSchedule', codigo: u, fecha: d, horario: 'DESCANSO', isAuto: true });
+                     r.ok ? rOk++ : rFail++;
+                  } catch(e) { rFail++; }
+               }
+            }
+            otLog(rFail > 0 ? 'warn' : 'ok', `✓ Días de descanso: ${rOk} guardados${rFail > 0 ? `, ${rFail} errores` : ''}`);
+         }
+      }
+
       btn.disabled = false;
       btn.textContent = '⚡ Procesar y Subir OTs';
       otLog(errCount > 0 ? 'warn' : 'ok', `${errCount > 0 ? '⚠' : '✅'} Completado: ${uploaded} OTs subidas${errCount > 0 ? ` · ${errCount} lotes con error` : ''}`);
@@ -3146,7 +3177,10 @@
         let remaining = [...(otByCode[code] || [])];
         let pendingConts = [];
 
-        entries.forEach((entry) => {
+        const spacingEl = document.getElementById('ot-spacing');
+        const distributeEvenly = spacingEl && spacingEl.value === 'even';
+
+        entries.forEach((entry, index) => {
           const uInfo = DB.users.find(u => u.codigo === code);
           const date = entry.date;
           const dkey = entry.dateKey;
@@ -3174,7 +3208,12 @@
 
           // Llena este día al máximo con lo que quede pendiente en la cola,
           // sin saltarse tareas que sí caben solo por venir después en la lista.
-          const result = assignTasks(entry.start, entry.end, remaining);
+          let currentLimit = Infinity;
+          if (distributeEvenly && !entry.rest) {
+             const remainingDays = entries.slice(index).filter(e => !e.rest).length;
+             currentLimit = remainingDays > 0 ? Math.ceil(remaining.length / remainingDays) : remaining.length;
+          }
+          const result = assignTasks(entry.start, entry.end, remaining, currentLimit);
           remaining = result.leftover;
           const dayTasksAll = result.scheduled.filter(s => s.type === 'task');
 
@@ -3275,19 +3314,20 @@
     // actividad que sí cabe se pierde por venir detrás de otra más grande.
     // Respeta el orden original: siempre intenta primero la tarea más
     // antigua de la cola que quepa, así lo ya asignado se mantiene estable.
-    function assignTasks(shiftStart, shiftEnd, tasksIn) {
+    function assignTasks(shiftStart, shiftEnd, tasksIn, limit = Infinity) {
       const { slots, breaks } = buildFreeSlots(shiftStart, shiftEnd);
       const tasks = tasksIn.map(t => ({ ...t }));
       const used = new Array(tasks.length).fill(false);
       const scheduled = [];
       let usedWork = 0;
+      let assignedCount = 0;
 
       slots.forEach(slot => {
         let cursor = slot.start;
         let firstInSlot = true;
         let placedSomething = true;
 
-        while (placedSomething) {
+        while (placedSomething && assignedCount < limit) {
           placedSomething = false;
           for (let i = 0; i < tasks.length; i++) {
             if (used[i]) continue;
@@ -3306,6 +3346,7 @@
               used[i] = true;
               firstInSlot = false;
               placedSomething = true;
+              assignedCount++;
               break; // reinicia el barrido respetando la prioridad/orden original
             }
           }
