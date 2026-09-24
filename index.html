@@ -3700,29 +3700,48 @@
       populateFilters();
     }
     // ─── SCHEDULING ENGINE ────────────────────────────────
+    // Construye los bloques libres del turno descontando solo el break de alimentación principal
+    // que cae dentro del turno. Breaks muy cortos o fuera del turno se ignoran.
     function buildFreeSlots(shiftStart, shiftEnd) {
-      const mealCandidates = [...MEALS];
-      if (shiftEnd > 1440) MEALS.forEach(m => mealCandidates.push({ ...m, start: m.start + 1440, end: m.end + 1440 }));
-      const breaks = []; const seen = new Set();
-      mealCandidates.forEach(meal => {
-        if (meal.end <= shiftStart || meal.start >= shiftEnd) return;
-        const bStart = Math.max(meal.start, shiftStart);
-        const bEnd = bStart + meal.dur;
-        if (bEnd > shiftEnd) return;
-        if (!seen.has(bStart)) { seen.add(bStart); breaks.push({ start: bStart, end: bEnd, name: meal.name, isMeal: true }); }
-      });
+      const shiftDur = shiftEnd - shiftStart; // duración real del turno en minutos
+      const breaks = [];
+      const seen = new Set();
+
+      // Solo aplicar breaks de alimentación que caigan COMPLETAMENTE dentro del turno
+      // y que el turno sea lo suficientemente largo (> 5h = 300 min) para justificarlos.
+      if (shiftDur >= 300) {
+        const mealCandidates = [...MEALS];
+        if (shiftEnd > 1440) {
+          MEALS.forEach(m => mealCandidates.push({ ...m, start: m.start + 1440, end: m.end + 1440 }));
+        }
+        mealCandidates.forEach(meal => {
+          if (meal.end <= shiftStart || meal.start >= shiftEnd) return;
+          const bStart = Math.max(meal.start, shiftStart + 60); // al menos 1h después de inicio
+          const bEnd = bStart + meal.dur;
+          if (bEnd > shiftEnd - 30) return; // no aplicar si queda muy al final
+          if (!seen.has(bStart)) {
+            seen.add(bStart);
+            breaks.push({ start: bStart, end: bEnd, name: meal.name, isMeal: true });
+          }
+        });
+      }
+
       breaks.sort((a, b) => a.start - b.start);
-      const slots = []; let cursor = shiftStart;
-      breaks.forEach(b => { if (b.start > cursor) slots.push({ start: cursor, end: b.start }); cursor = b.end; });
+      const slots = [];
+      let cursor = shiftStart;
+      breaks.forEach(b => {
+        if (b.start > cursor) slots.push({ start: cursor, end: b.start });
+        cursor = b.end;
+      });
       if (cursor < shiftEnd) slots.push({ start: cursor, end: shiftEnd });
       return { slots, breaks };
     }
 
-    // assignTasks: llena cada bloque disponible del día revisando TODA
-    // la cola de tareas pendientes (no solo la primera), así ninguna
-    // actividad que sí cabe se pierde por venir detrás de otra más grande.
-    // Respeta el orden original: siempre intenta primero la tarea más
-    // antigua de la cola que quepa, así lo ya asignado se mantiene estable.
+    // assignTasks: asigna actividades dentro de los bloques libres del turno.
+    // - NO hay límite artificial de horas: el propio horario del técnico es el límite.
+    // - SIN tiempo de tránsito entre tareas (actividades en el mismo edificio).
+    // - Rellena cada bloque hasta el último minuto disponible.
+    // - Las tareas que no caben en el día quedan en `leftover` para el siguiente día de trabajo.
     function assignTasks(shiftStart, shiftEnd, tasksIn, limit = Infinity) {
       const { slots, breaks } = buildFreeSlots(shiftStart, shiftEnd);
       const tasks = tasksIn.map(t => ({ ...t }));
@@ -3733,7 +3752,6 @@
 
       slots.forEach(slot => {
         let cursor = slot.start;
-        let firstInSlot = true;
         let placedSomething = true;
 
         while (placedSomething && assignedCount < limit) {
@@ -3741,22 +3759,22 @@
           for (let i = 0; i < tasks.length; i++) {
             if (used[i]) continue;
             const task = tasks[i];
-            const transit = firstInSlot ? 0 : TRANSIT_MIN;
             const available = slot.end - cursor;
-            if (usedWork + task.durMin > 480) continue; // límite de 8h/día
-            if (available >= transit + task.durMin) {
-              if (!firstInSlot) {
-                scheduled.push({ type: 'transit', name: '🚶 Tránsito entre áreas', startMin: cursor, endMin: cursor + TRANSIT_MIN, durMin: TRANSIT_MIN });
-                cursor += TRANSIT_MIN;
-              }
-              scheduled.push({ type: 'task', ...task, startMin: cursor, endMin: cursor + task.durMin, overTime: false });
+            // Verificar que la tarea cabe en el tiempo restante del bloque
+            if (available >= task.durMin) {
+              scheduled.push({
+                type: 'task',
+                ...task,
+                startMin: cursor,
+                endMin: cursor + task.durMin,
+                overTime: false   // siempre dentro del turno
+              });
               cursor += task.durMin;
               usedWork += task.durMin;
               used[i] = true;
-              firstInSlot = false;
               placedSomething = true;
               assignedCount++;
-              break; // reinicia el barrido respetando la prioridad/orden original
+              break;
             }
           }
         }
@@ -3764,7 +3782,14 @@
 
       const leftover = tasks.filter((t, i) => !used[i]);
 
-      breaks.forEach(b => scheduled.push({ type: 'break', name: b.name, startMin: b.start, endMin: b.end, durMin: b.end - b.start }));
+      // Agregar los breaks al schedule para visualización
+      breaks.forEach(b => scheduled.push({
+        type: 'break',
+        name: b.name,
+        startMin: b.start,
+        endMin: b.end,
+        durMin: b.end - b.start
+      }));
       scheduled.sort((a, b) => a.startMin - b.startMin);
 
       const totalFree = slots.reduce((s, sl) => s + (sl.end - sl.start), 0);
