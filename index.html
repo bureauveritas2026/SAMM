@@ -1867,20 +1867,37 @@
           </div>
           <div class="card-body">
             <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7">
-              Sube el Excel generado por la aplicación de horarios. El sistema leerá los turnos automáticamente.<br>
-              <b style="color:var(--accent1)">Formato esperado:</b> Nombres en la primera columna, fechas en las siguientes.
+              Sube el Excel de horarios de tu otra aplicación. El sistema detecta los códigos de turno (M01–M04) automáticamente.<br>
+              <b style="color:var(--accent1)">Importante:</b> El <b>Periodo activo</b> controla qué mes se usa para asignar actividades. Se detecta automáticamente al cargar el archivo.
             </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+              <div class="fgroup">
+                <label>Periodo activo de distribución</label>
+                <input type="month" id="dist-month" onchange="onDistMonthChange()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;outline:none;">
+              </div>
+              <div class="fgroup">
+                <label>Acción al subir (si ya existe el turno)</label>
+                <select id="sch-overwrite" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;outline:none;">
+                  <option value="overwrite">Sobreescribir existentes</option>
+                  <option value="skip">Omitir si ya existe</option>
+                </select>
+              </div>
+            </div>
             <div class="upload-area" id="sch-dropzone">
               <input type="file" id="sch-file" accept=".xlsx,.xls,.html" onchange="handleScheduleFile(event)">
               <span class="upload-icon">📅</span>
               <div class="upload-title">Excel de Horarios</div>
-              <div class="upload-sub">Arrastra o haz clic · <code>.xls</code></div>
+              <div class="upload-sub">Arrastra o haz clic · <code>.xls</code> · <code>.xlsx</code></div>
             </div>
             <div id="sch-log" class="process-log" style="display:none;margin-top:12px;"></div>
-            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
               <button class="btn btn-primary" id="btn-upload-sch" onclick="uploadSchedules()" disabled>
-                ⚡ Procesar y Subir Horarios
+                ⚡ Subir Horarios a la Base
               </button>
+              <button class="btn btn-secondary btn-sm" onclick="loadAndBuild()">
+                🔄 Recalcular distribución
+              </button>
+              <span id="dist-month-badge" style="font-size:11px;color:var(--accent1);font-weight:600;"></span>
             </div>
           </div>
         </div>
@@ -3310,29 +3327,35 @@
       btn.innerHTML = '<span class="spinner"></span> Subiendo...';
 
       let uploaded = 0, errCount = 0;
+      const CONCURRENT = 8;  // peticiones paralelas simultáneas
+      const BATCH = 40;      // tamaño de lote
 
-      for (let i = 0; i < _processedSchedules.length; i++) {
-        const item = _processedSchedules[i];
-        try {
-          const res = await apiPost({
-            action: 'saveSchedule',
-            codigo: item.codigo,
-            fecha: item.fecha,
-            dia: item.dia,
-            horario: item.horario,
-            turno_nombre: item.turno_nombre
+      for (let i = 0; i < _processedSchedules.length; i += BATCH) {
+        const chunk = _processedSchedules.slice(i, i + BATCH);
+        // Subir el lote en grupos concurrentes de CONCURRENT
+        for (let j = 0; j < chunk.length; j += CONCURRENT) {
+          const parallel = chunk.slice(j, j + CONCURRENT);
+          const results = await Promise.allSettled(
+            parallel.map(item => apiPost({
+              action: 'saveSchedule',
+              codigo: item.codigo,
+              fecha: item.fecha,
+              dia: item.dia,
+              horario: item.horario,
+              turno_nombre: item.turno_nombre
+            }))
+          );
+          results.forEach(r => {
+            if (r.status === 'fulfilled' && r.value?.ok) uploaded++;
+            else errCount++;
           });
-          res.ok ? uploaded++ : errCount++;
-        } catch (e) { errCount++; }
-
-        if (i > 0 && i % 20 === 0) {
-          schLog('info', `Subiendo... ${uploaded}/${_processedSchedules.length}`);
         }
+        schLog('info', `Subiendo... ${Math.min(i + BATCH, _processedSchedules.length)}/${_processedSchedules.length}`);
       }
 
       btn.disabled = false;
-      btn.textContent = '⚡ Procesar y Subir Horarios';
-      schLog(errCount > 0 ? 'warn' : 'ok', `${errCount > 0 ? '⚠' : '✅'} Completado: ${uploaded} subidos${errCount > 0 ? ` · ${errCount} con error` : ''}`);
+      btn.textContent = '⚡ Subir Horarios a la Base';
+      schLog(errCount > 0 ? 'warn' : 'ok', `${errCount > 0 ? '⚠' : '✅'} Completado: ${uploaded} turnos subidos${errCount > 0 ? ` · ${errCount} errores` : ''}`);
       await refreshAll();
     }
 
