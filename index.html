@@ -2306,6 +2306,101 @@
     // (07-16 o 09-18), respetando comidas, tránsitos y el límite de
     // 8 horas de trabajo ya presentes en el motor de asignación.
     // ══════════════════════════════════════════════════════════════
+    let ACTIVE_DIST_MONTH = ''; // e.g. '2026-09'
+
+    function onDistMonthChange() {
+      const inp = document.getElementById('dist-month');
+      ACTIVE_DIST_MONTH = inp ? inp.value : '';
+      updateDistMonthBadge();
+      if (AUTO_SCHEDULE.enabled) {
+        AUTO_SCHEDULE.month = ACTIVE_DIST_MONTH;
+        const autoM = document.getElementById('auto-sch-month');
+        if (autoM) autoM.value = ACTIVE_DIST_MONTH;
+      }
+      if (DB.ots.length > 0 || DB.schedules.length > 0) {
+        buildDistribution();
+      }
+    }
+
+    function updateDistMonthBadge() {
+      const badge = document.getElementById('dist-month-badge');
+      if (!badge) return;
+      if (ACTIVE_DIST_MONTH) {
+        const [y, m] = ACTIVE_DIST_MONTH.split('-');
+        const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+        const name = d.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' });
+        badge.innerHTML = `📅 Periodo activo: <b style="color:var(--text)">${name.toUpperCase()} (${ACTIVE_DIST_MONTH})</b>`;
+      } else {
+        badge.innerHTML = `📅 Mostrando todos los horarios`;
+      }
+    }
+
+    function cleanTokens(s) {
+      if (!s) return [];
+      const norm = String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      return norm.split(/[^a-z0-9]+/).filter(t => t.length > 1);
+    }
+
+    // Resuelve nombres de técnicos o códigos a sus códigos HIM correspondientes
+    function resolveUserCode(nameOrCode) {
+      if (!nameOrCode) return '';
+      const raw = String(nameOrCode).trim();
+      const rawUpper = raw.toUpperCase();
+
+      // 1. Coincidencia directa con código existente en DB.users
+      const exact = DB.users.find(u => normCode(u.codigo) === normCode(rawUpper));
+      if (exact) return exact.codigo;
+
+      // 2. Coincidencia con prefijo o sufijo (ej: MCASTRO vs HIM.MCASTRO)
+      const cleanUpper = rawUpper.replace(/^HIM[\.\-_]?/, '');
+      const matchSuffix = DB.users.find(u => normCode(u.codigo).replace(/^HIM[\.\-_]?/, '') === cleanUpper);
+      if (matchSuffix) return matchSuffix.codigo;
+
+      // 3. Coincidencia inteligente por tokens/palabras en el nombre completo
+      const nameTokens = new Set(cleanTokens(raw));
+      let bestUser = null;
+      let bestScore = 0;
+
+      DB.users.forEach(u => {
+        const uTokens = new Set(cleanTokens(u.nombre));
+        const codeSuffix = normCode(u.codigo).replace(/^HIM[\.\-_]?/, '').toLowerCase();
+        let score = 0;
+
+        nameTokens.forEach(t => {
+          if (uTokens.has(t)) score += 1;
+          if (codeSuffix.includes(t) || t.includes(codeSuffix)) score += 1.5;
+        });
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestUser = u;
+        }
+      });
+
+      if (bestUser && (bestScore >= 1.5 || (bestScore >= 1 && nameTokens.size <= 2))) {
+        return bestUser.codigo;
+      }
+
+      // 4. Si es un nuevo usuario sin código en DB, generamos código estilo HIM.XAPELLIDO
+      const tokens = cleanTokens(raw);
+      if (tokens.length > 0) {
+        const first = tokens[0][0].toUpperCase();
+        const last = tokens[tokens.length - 1].toUpperCase();
+        const genCode = `HIM.${first}${last}`;
+        if (!DB.users.some(u => u.codigo === genCode)) {
+          DB.users.push({
+            codigo: genCode,
+            nombre: raw,
+            color: COLORS[DB.users.length % COLORS.length],
+            activo: '1'
+          });
+        }
+        return genCode;
+      }
+
+      return rawUpper;
+    }
+
     const AUTO_SCHEDULE = {
       enabled: false,
       shift: '07:00 – 16:00',
@@ -2341,14 +2436,20 @@
       }
       initColorPicker();
       const now = new Date();
-      document.getElementById('sch-month-sel').value =
-        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
+      const schMonthSel = document.getElementById('sch-month-sel');
+      if (schMonthSel) schMonthSel.value = currentMonth;
 
-      // Por defecto, el horario automático propone completar Junio del año actual
-      const juneDefault = `${now.getFullYear()}-06`;
-      AUTO_SCHEDULE.month = juneDefault;
+      // Inicializar mes activo de distribución con el mes actual o de la programación
+      ACTIVE_DIST_MONTH = currentMonth;
+      const distMonthInput = document.getElementById('dist-month');
+      if (distMonthInput) distMonthInput.value = currentMonth;
+      updateDistMonthBadge();
+
+      AUTO_SCHEDULE.month = currentMonth;
       const autoMonthInput = document.getElementById('auto-sch-month');
-      if (autoMonthInput) autoMonthInput.value = juneDefault;
+      if (autoMonthInput) autoMonthInput.value = currentMonth;
       const autoEnabledSel = document.getElementById('auto-sch-enabled');
       if (autoEnabledSel) autoEnabledSel.value = AUTO_SCHEDULE.enabled ? '1' : '0';
       const autoShiftSel = document.getElementById('auto-sch-shift');
@@ -2412,26 +2513,35 @@
     }
 
     // Calcula los horarios "efectivos": los registrados en DB.schedules
-    // más los generados automáticamente para técnicos con OTs sin horario
+    // filtrados por el mes activo, más los generados automáticamente para técnicos con OTs sin horario
     // en el mes configurado.
     function getEffectiveSchedules() {
       ST.autoGenerated = [];
-      if (!AUTO_SCHEDULE.enabled || !AUTO_SCHEDULE.month) return DB.schedules;
 
-      const [yr, mo] = AUTO_SCHEDULE.month.split('-').map(Number);
-      if (!yr || !mo) return DB.schedules;
+      // 1. Filtrar los horarios de base según el mes activo de distribución
+      let baseSchedules = DB.schedules;
+      if (ACTIVE_DIST_MONTH) {
+        baseSchedules = DB.schedules.filter(s => s.fecha && s.fecha.startsWith(ACTIVE_DIST_MONTH));
+      }
+
+      if (!AUTO_SCHEDULE.enabled || !AUTO_SCHEDULE.month) return baseSchedules;
+
+      const targetMonth = AUTO_SCHEDULE.month || ACTIVE_DIST_MONTH;
+      const [yr, mo] = targetMonth.split('-').map(Number);
+      if (!yr || !mo) return baseSchedules;
       const daysInMonth = new Date(yr, mo, 0).getDate();
 
       // Técnicos que tienen al menos una OT asignada
       const codesWithOTs = new Set(
-        DB.ots.map(o => normCode(o.codigo_usuario)).filter(Boolean)
+        DB.ots.map(o => resolveUserCode(o.codigo_usuario)).filter(Boolean)
       );
 
-      // Fechas ya registradas por técnico
+      // Fechas ya registradas por técnico (normalizadas por resolvedCode)
       const existing = {};
-      DB.schedules.forEach(s => {
-        if (!existing[s.codigo]) existing[s.codigo] = new Set();
-        existing[s.codigo].add(s.fecha);
+      baseSchedules.forEach(s => {
+        const c = resolveUserCode(s.codigo);
+        if (!existing[c]) existing[c] = new Set();
+        existing[c].add(s.fecha);
       });
 
       const preset = getPreset(AUTO_SCHEDULE.shift);
@@ -2459,10 +2569,10 @@
       const infoEl = document.getElementById('auto-sch-info');
       if (infoEl) {
         infoEl.textContent = synthetic.length
-          ? `🤖 ${synthetic.length} horario(s) generado(s) automáticamente para ${AUTO_SCHEDULE.month}`
+          ? `🤖 ${synthetic.length} horario(s) generado(s) automáticamente para ${targetMonth}`
           : '✓ No hay días sin horario que completar en ese mes';
       }
-      return [...DB.schedules, ...synthetic];
+      return [...baseSchedules, ...synthetic];
     }
 
     // Guarda en la base de datos (Google Sheets) los horarios que fueron
@@ -2541,8 +2651,17 @@
         });
         updateStatusRows();
         populateFilters();
+        if (!ACTIVE_DIST_MONTH && DB.schedules.length > 0) {
+          const months = [...new Set(DB.schedules.map(s => s.fecha ? s.fecha.substring(0, 7) : '').filter(m => /^\d{4}-\d{2}$/.test(m)))].sort();
+          if (months.length > 0) {
+            ACTIVE_DIST_MONTH = months[months.length - 1];
+            const distInp = document.getElementById('dist-month');
+            if (distInp) distInp.value = ACTIVE_DIST_MONTH;
+            updateDistMonthBadge();
+          }
+        }
         setStatus(`✓ ${DB.users.length} usuarios · ${DB.ots.length} OTs · ${DB.schedules.length} horarios`, 'ok');
-        if (DB.ots.length > 0 && DB.users.length > 0) buildDistribution();
+        if (DB.ots.length > 0) buildDistribution();
       } catch (e) {
         console.error('refreshAll error:', e);
         setStatus('✗ Error: ' + e.message, 'err');
@@ -2968,7 +3087,7 @@
       // OTs que YA existen en la base (usuario + código OT), para no
       // duplicarlas ni alterar el horario ya asignado a las que están.
       const existingOTKeys = new Set(
-        DB.ots.map(o => normCode(o.codigo_usuario) + '||' + String(o.codigo_ot || '').trim())
+        DB.ots.map(o => resolveUserCode(o.codigo_usuario) + '||' + String(o.codigo_ot || '').trim())
       );
 
       const reader = new FileReader();
@@ -3014,8 +3133,9 @@
           const processedCodes = new Set();
           let skippedExisting = 0;
           validRows.forEach((row, idx) => {
-            const codUser = String(row[0] || '').trim().toUpperCase();
-            if (!codUser) return;
+            const rawUser = String(row[0] || '').trim();
+            if (!rawUser) return;
+            const codUser = resolveUserCode(rawUser);
 
             const ot1 = String(row[27] || '').trim();
             const ot2 = String(row[28] || '').trim();
@@ -3078,8 +3198,21 @@
             return;
           }
 
+          // Integración en memoria inmediata para calcular distribución al instante
+          const currentOTKeys = new Set(DB.ots.map(o => resolveUserCode(o.codigo_usuario) + '||' + String(o.codigo_ot || '').trim()));
+          _processedOTs.forEach(o => {
+            if (!currentOTKeys.has(o.codigo_usuario + '||' + o.codigo_ot)) {
+              DB.ots.push(o);
+            }
+          });
+
           document.getElementById('btn-upload-ots').disabled = false;
           otLog('ok', `✅ Listo para subir. Haz clic en "Procesar y Subir OTs"`);
+
+          if (DB.schedules.length > 0) {
+            buildDistribution();
+            otLog('ok', `⚡ ¡Distribución recalculada inmediatamente con las OTs cargadas!`);
+          }
         } catch (err) {
           otLog('err', '✗ Error procesando archivo: ' + err.message);
           console.error('handleOTFile error:', err);
@@ -3230,6 +3363,17 @@
           }
           schLog('info', `✓ ${dateCols.length} columnas de fecha mapeadas`);
 
+          // Sincronizar automáticamente el periodo activo con el mes detectado en el archivo
+          const fileMonth = dateCols[0].dkey.substring(0, 7);
+          ACTIVE_DIST_MONTH = fileMonth;
+          const distMonthInput = document.getElementById('dist-month');
+          if (distMonthInput) distMonthInput.value = fileMonth;
+          updateDistMonthBadge();
+
+          AUTO_SCHEDULE.month = fileMonth;
+          const autoM = document.getElementById('auto-sch-month');
+          if (autoM) autoM.value = fileMonth;
+
           // Mapa de turnos por código
           const SHIFT_MAP = {
             'M01': '07:00 – 16:00',
@@ -3244,11 +3388,12 @@
           dataRows.forEach(row => {
             const user = String(row[0] || '').trim();
             if (!user || user.length < 2) return;
-            usersSeen.add(user);
+            const resolvedCode = resolveUserCode(user);
+            usersSeen.add(`${user} ➔ ${resolvedCode}`);
 
             dateCols.forEach(col => {
               const cellVal = String(row[col.colIdx] || '').trim();
-              if (!cellVal) return;
+              if (!cellVal || cellVal === '—' || cellVal === '-') return;
 
               let horario = '';
               let turno_nombre = '';
@@ -3279,10 +3424,13 @@
               }
 
               if (horario) {
+                const dObj = new Date(col.dkey + 'T00:00:00');
+                const dayName = DAYS_ES[dObj.getDay()] || '';
                 _processedSchedules.push({
-                  codigo: user.toUpperCase(),
+                  codigo: resolvedCode,
+                  nombre_original: user,
                   fecha: col.dkey,
-                  dia: '',
+                  dia: dayName,
                   horario: horario,
                   turno_nombre: turno_nombre
                 });
@@ -3297,8 +3445,22 @@
 
           const restCount = _processedSchedules.filter(s => s.horario === 'DESCANSO').length;
           const workCount = _processedSchedules.length - restCount;
+          usersSeen.forEach(u => schLog('ok', `👤 Mapeado: ${u}`));
           schLog('ok', `✅ ${usersSeen.size} técnicos · ${workCount} turnos de trabajo · ${restCount} días de descanso`);
+
+          // Integración inmediata en memoria para recalcular y visualizar al instante
+          const schedMap = new Map();
+          DB.schedules.forEach(s => schedMap.set(`${normCode(s.codigo)}||${s.fecha}`, s));
+          _processedSchedules.forEach(s => schedMap.set(`${normCode(s.codigo)}||${s.fecha}`, s));
+          DB.schedules = Array.from(schedMap.values());
+
           document.getElementById('btn-upload-sch').disabled = false;
+          schLog('info', `⚡ Horarios aplicados en memoria para ${ACTIVE_DIST_MONTH}. Haz clic en "Subir Horarios a la Base" para guardarlos.`);
+
+          if (DB.ots.length > 0) {
+            buildDistribution();
+            schLog('ok', `🎯 ¡Actividades asignadas inmediatamente dentro de los turnos de trabajo!`);
+          }
 
         } catch (err) {
           schLog('err', '✗ Error procesando archivo: ' + err.message);
@@ -3326,13 +3488,29 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Subiendo...';
 
-      let uploaded = 0, errCount = 0;
-      const CONCURRENT = 8;  // peticiones paralelas simultáneas
-      const BATCH = 40;      // tamaño de lote
+      const overwrite = document.getElementById('sch-overwrite')?.value !== 'skip';
 
-      for (let i = 0; i < _processedSchedules.length; i += BATCH) {
-        const chunk = _processedSchedules.slice(i, i + BATCH);
-        // Subir el lote en grupos concurrentes de CONCURRENT
+      // Filtrar turnos si el usuario seleccionó omitir existentes
+      let toUpload = _processedSchedules;
+      if (!overwrite) {
+        const existingSet = new Set(DB.schedules.map(s => `${normCode(s.codigo)}||${s.fecha}||${s.horario}`));
+        toUpload = _processedSchedules.filter(s => !existingSet.has(`${normCode(s.codigo)}||${s.fecha}||${s.horario}`));
+        schLog('info', `Modo omitir: ${toUpload.length} turnos nuevos a subir (${_processedSchedules.length - toUpload.length} ya existentes omitidos).`);
+      }
+
+      if (toUpload.length === 0) {
+        btn.disabled = false;
+        btn.textContent = '⚡ Subir Horarios a la Base';
+        schLog('ok', '✓ Todos los turnos ya existen en la base de datos.');
+        return;
+      }
+
+      let uploaded = 0, errCount = 0;
+      const CONCURRENT = 10;
+      const BATCH = 30;
+
+      for (let i = 0; i < toUpload.length; i += BATCH) {
+        const chunk = toUpload.slice(i, i + BATCH);
         for (let j = 0; j < chunk.length; j += CONCURRENT) {
           const parallel = chunk.slice(j, j + CONCURRENT);
           const results = await Promise.allSettled(
@@ -3350,12 +3528,13 @@
             else errCount++;
           });
         }
-        schLog('info', `Subiendo... ${Math.min(i + BATCH, _processedSchedules.length)}/${_processedSchedules.length}`);
+        const pct = Math.round((Math.min(i + BATCH, toUpload.length) / toUpload.length) * 100);
+        schLog('info', `⏳ Subiendo turnos: ${uploaded}/${toUpload.length} (${pct}%)…`);
       }
 
       btn.disabled = false;
       btn.textContent = '⚡ Subir Horarios a la Base';
-      schLog(errCount > 0 ? 'warn' : 'ok', `${errCount > 0 ? '⚠' : '✅'} Completado: ${uploaded} turnos subidos${errCount > 0 ? ` · ${errCount} errores` : ''}`);
+      schLog(errCount > 0 ? 'warn' : 'ok', `${errCount > 0 ? '⚠' : '✅'} Completado: ${uploaded} turnos sincronizados en la base${errCount > 0 ? ` · ${errCount} errores` : ''}`);
       await refreshAll();
     }
 
@@ -3406,25 +3585,26 @@
       }
     }
 
-    // ─── DISTRIBUTION ENGINE (mejorado: rellena mejor los días
-    // disponibles y no duplica/mueve lo ya asignado) ──────────
+    // ─── DISTRIBUTION ENGINE (asignación estricta dentro del turno) ──
     function buildDistribution() {
       const schByCode = {};
-      getEffectiveSchedules().forEach(s => {
-        if (!schByCode[s.codigo]) schByCode[s.codigo] = [];
+      const effSchedules = getEffectiveSchedules();
+      effSchedules.forEach(s => {
+        const c = resolveUserCode(s.codigo);
+        if (!schByCode[c]) schByCode[c] = [];
         const isRest = /^(DESCANSO|DESC|REST|LIBRE|DAY\s*OFF|OFF)/i.test(String(s.horario || '').trim());
         if (isRest) {
-          schByCode[s.codigo].push({ dateKey: s.fecha, date: parseDate(s.fecha), day: s.dia, rest: true, isAuto: !!s.isAuto });
+          schByCode[c].push({ dateKey: s.fecha, date: parseDate(s.fecha), day: s.dia, rest: true, isAuto: !!s.isAuto });
           return;
         }
         const parsed = parseSchedule(s.horario);
         if (!parsed || parsed.rest) return;
-        schByCode[s.codigo].push({ dateKey: s.fecha, date: parseDate(s.fecha), day: s.dia, ...parsed, isAuto: !!s.isAuto });
+        schByCode[c].push({ dateKey: s.fecha, date: parseDate(s.fecha), day: s.dia, ...parsed, isAuto: !!s.isAuto });
       });
 
       const otByCode = {};
       DB.ots.forEach(o => {
-        const code = normCode(o.codigo_usuario);
+        const code = resolveUserCode(o.codigo_usuario);
         if (!code) return;
         if (!otByCode[code]) otByCode[code] = [];
         otByCode[code].push({
@@ -3452,7 +3632,7 @@
         const distributeEvenly = spacingEl && spacingEl.value === 'even';
 
         entries.forEach((entry, index) => {
-          const uInfo = DB.users.find(u => u.codigo === code);
+          const uInfo = DB.users.find(u => normCode(u.codigo) === normCode(code));
           const date = entry.date;
           const dkey = entry.dateKey;
           const common = { code, color, uName: uInfo?.nombre || code, date, dkey, day: DAYS_ES[date.getDay()], isAuto: !!entry.isAuto };
@@ -3482,18 +3662,18 @@
           });
         });
 
-        // Excedente real: no hubo capacidad en NINGÚN día programado.
-        // Se muestra con fecha real (el día siguiente al último programado)
-        // y una etiqueta clara de advertencia, en vez de un bloque ambiguo.
+        // Si quedaron tareas pendientes (sin horario disponible para ese técnico)
         if (remaining.length > 0) {
+          const uInfo = DB.users.find(u => normCode(u.codigo) === normCode(code));
           const lastEntry = entries.length ? entries[entries.length - 1] : null;
           const excDate = lastEntry ? new Date(lastEntry.date) : new Date();
           if (lastEntry) excDate.setDate(excDate.getDate() + 1);
+
           allGroups.push({
-            code, color, uName: DB.users.find(u => u.codigo === code)?.nombre || code,
+            code, color, uName: uInfo?.nombre || code,
             date: excDate, dkey: dkStr(excDate), day: DAYS_ES[excDate.getDay()],
             slotStart: 480, slotEnd: 480 + remaining.length * 75,
-            hasSched: false, isRest: false, overnight: false, isExcess: true,
+            hasSched: false, isRest: false, overnight: false, isExcess: true, isNoSched: entries.length === 0,
             scheduled: remaining.map((t, i) => ({ type: 'task', ...t, startMin: 480 + i * 75, endMin: 480 + i * 75 + t.durMin, overTime: true })),
             overtime: remaining, usedWork: remaining.reduce((s, t) => s + t.durMin, 0),
             totalFree: remaining.length * 75, pct: 0, taskCount: remaining.length, otItems: remaining,
@@ -3801,14 +3981,14 @@
       <div class="uhead">
         <div class="avatar" style="background:${g.color}">${initials}</div>
         <div class="uinfo">
-          <h3>${g.code}${g.isContinuation ? ' <small style="color:var(--accent5)">[CONTINUACIÓN]</small>' : ''}</h3>
+          <h3>${g.uName && g.uName !== g.code ? `${g.uName} <small style="color:var(--muted);font-weight:400;font-size:11px">(${g.code})</small>` : g.code}${g.isContinuation ? ' <small style="color:var(--accent5)">[CONTINUACIÓN]</small>' : ''}</h3>
           <p>${g.day} · ${dateStr}</p>
         </div>
-        ${!g.isRest ? `<span class="tag" style="margin-left:auto;background:${g.isExcess ? '#ff526315' : g.color + '15'};color:${g.isExcess ? 'var(--accent2)' : g.color};border:1px solid ${g.isExcess ? '#ff526330' : g.color + '30'}">${g.isExcess ? '⚠ Sin horario disponible' : (g.overnight ? '🌙 Nocturno' : '☀️ Turno')}</span>` : ''}
+        ${!g.isRest ? `<span class="tag" style="margin-left:auto;background:${g.isExcess ? '#ff526315' : g.color + '15'};color:${g.isExcess ? 'var(--accent2)' : g.color};border:1px solid ${g.isExcess ? '#ff526330' : g.color + '30'}">${g.isExcess ? (g.isNoSched ? '⚠ Sin turno registrado' : '⚠ Excedente de turno') : (g.overnight ? '🌙 Nocturno' : '☀️ Turno')}</span>` : ''}
         ${g.isAuto ? `<span class="tag tag-orange" style="margin-left:6px">🤖 Automático</span>` : ''}
       </div>
       <div class="day-sched">
-        <div class="day-title">${g.isRest ? '🛌 Día de Descanso' : g.isExcess ? '⚠ Excedente — no cupo en los días con horario registrado' : (g.isContinuation ? '🌙 Término de turno anterior' : '📅 Actividades del día')}</div>
+        <div class="day-title">${g.isRest ? '🛌 Día de Descanso' : g.isExcess ? (g.isNoSched ? '⚠ Técnico sin turnos programados en este mes' : '⚠ Excedente — no cupo en los días con horario registrado') : (g.isContinuation ? '🌙 Término de turno anterior' : '📅 Actividades del día')}</div>
         ${items.map((item, ii) => {
           const isT = item.type === 'task';
           let taskIdx = -1;
