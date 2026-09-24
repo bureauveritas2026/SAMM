@@ -4185,7 +4185,7 @@
       if (!code) return;
       const cards = document.getElementById('print-cards');
       cards.innerHTML = '';
-      ST.result.filter(g => g.code === code && !g.isRest).forEach(g => {
+      ST.result.filter(g => g.code === code && !g.isRest && !g.isExcess).forEach(g => {
         const tasks = (g.scheduled || []).filter(s => s.type === 'task');
         if (!tasks.length) return;
         cards.appendChild(buildPreviewCard(g, tasks));
@@ -4234,14 +4234,15 @@
     function doPrint() {
       const code = document.getElementById('print-user').value;
       if (!code) { alert('Selecciona un colaborador'); return; }
-      openPrintWindow(code, ST.result.filter(g => g.code === code && !g.isRest));
+      // Excluir días de descanso Y grupos de exceso (tareas sin horario asignado)
+      openPrintWindow(code, ST.result.filter(g => g.code === code && !g.isRest && !g.isExcess));
     }
     function doPrintAll() {
       if (!ST.result) { alert('Sin datos'); return; }
-      openPrintWindow('TODOS', ST.result.filter(g => !g.isRest));
+      openPrintWindow('TODOS', ST.result.filter(g => !g.isRest && !g.isExcess));
     }
     function printSingleDay(code, dkey) {
-      openPrintWindow(code + ' · ' + dkey, ST.result.filter(g => g.code === code && g.dkey === dkey && !g.isRest));
+      openPrintWindow(code + ' · ' + dkey, ST.result.filter(g => g.code === code && g.dkey === dkey && !g.isRest && !g.isExcess));
     }
     function openPrintWindow(title, groups) {
       const byCode = {};
@@ -4289,9 +4290,44 @@
       const w = window.open('', '_blank', 'width=1000,height=750');
       w.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Horario — ${title}</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-size:11px;}
-/* ... other print styles ... */
+body{font-family:'Inter','Segoe UI',Arial,sans-serif;background:#f8f9fa;color:#1a1a2e;font-size:11px;padding:20px;}
+h2{font-size:16px;font-weight:700;margin:0;}
+h3{font-size:13px;font-weight:700;margin:0;}
+p{font-size:10px;color:#555;margin-top:3px;}
+.user-section{margin-bottom:36px;page-break-inside:avoid;}
+.user-header{display:flex;align-items:center;gap:14px;background:#1a1a2e;color:#fff;padding:14px 18px;border-radius:12px 12px 0 0;margin-bottom:0;}
+.user-header p{color:rgba(255,255,255,0.65);}
+.user-avatar{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;}
+.day-block{border:1px solid #e2e8f0;border-radius:0 0 10px 10px;overflow:hidden;margin-top:0;margin-bottom:14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.day-head{display:flex;align-items:center;gap:12px;background:#f1f5f9;padding:10px 16px;border-bottom:1px solid #e2e8f0;}
+.day-icon{width:34px;height:34px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;flex-shrink:0;}
+.day-head h3{font-size:12px;font-weight:700;color:#1e293b;text-transform:capitalize;}
+.day-head p{font-size:10px;color:#64748b;margin-top:2px;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+thead tr{background:#f8fafc;}
+th{padding:8px 10px;text-align:left;font-size:8.5px;letter-spacing:0.8px;text-transform:uppercase;color:#94a3b8;border-bottom:2px solid #e2e8f0;font-weight:600;}
+td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+tr.even{background:#fff;}
+tr.odd{background:#fafbff;}
+tr.row-done{opacity:0.55;text-decoration:line-through;}
+tr.row-done td{color:#94a3b8;}
+.time{font-weight:700;color:#3b82f6;font-variant-numeric:tabular-nums;}
+.dur{color:#8b5cf6;font-weight:600;}
+.main{font-weight:600;color:#1e293b;}
+.badge-ok{display:inline-block;padding:2px 8px;border-radius:20px;font-size:8px;font-weight:700;letter-spacing:0.5px;background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;}
+.badge-ot{display:inline-block;padding:2px 8px;border-radius:20px;font-size:8px;font-weight:700;letter-spacing:0.5px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;}
+.chk-done{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:#16a34a;color:#fff;border-radius:3px;font-size:10px;font-weight:700;}
+.chk-empty{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border:1.5px solid #cbd5e1;border-radius:3px;}
+.col-chk{width:22px;text-align:center;}
+.page-break{page-break-after:always;height:0;}
+@media print{
+  body{background:#fff;padding:0;}
+  .user-section{page-break-before:auto;}
+  .day-block{box-shadow:none;border:1px solid #ddd;}
+  .page-break{page-break-after:always;}
+}
 </style></head><body>${sections}</body></html>`);
       w.document.close();
       setTimeout(() => w.print(), 500);
@@ -4305,7 +4341,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
 
       const rows = [];
       ST.result.forEach((g) => {
-        if (g.isRest || !g.scheduled) return;
+        if (g.isRest || g.isExcess || !g.scheduled) return;
         if (userFilter && g.code !== userFilter) return;
 
         const tasks = g.scheduled.filter(s => s.type === 'task');
