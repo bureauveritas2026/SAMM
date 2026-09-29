@@ -1829,17 +1829,37 @@
           </div>
           <div class="card-body">
             <p style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7">
-              Sube el Excel de OTs. El sistema detecta automáticamente las columnas.<br>
-              <b style="color:var(--accent3)">Columnas esperadas:</b> Col.1→Usuario · Col.28-29→OT · Col.39→Catálogo ·
-              Col.81→Equipo · Col.86→Ubicación
+              Sube el Excel de OTs o <b>Lista de Actividades</b> (ej. Fan Coil).<br>
+              <b style="color:var(--accent1)">Compatibilidad total:</b> Archivos detallados ERP o listas simples (N° y Actividad).
             </p>
             <div class="upload-area" id="ot-dropzone">
               <input type="file" id="ot-file" accept=".xlsx,.xls" onchange="handleOTFile(event)">
               <span class="upload-icon">📋</span>
-              <div class="upload-title">Excel de OTs</div>
+              <div class="upload-title">Excel de OTs / Actividades</div>
               <div class="upload-sub">Arrastra o haz clic · <code>.xlsx</code> · <code>.xls</code></div>
             </div>
+
             <div class="fgroup" style="margin-top:12px;margin-bottom:8px">
+              <label style="display:flex;align-items:center;gap:6px;">👤 <b>Asignar actividades a:</b></label>
+              <select id="ot-assign-target" onchange="onTargetTechChange()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;width:100%;outline:none;">
+                <option value="auto_distribute">⚡ Distribuir equitativamente entre técnicos con turno en el horario (Recomendado)</option>
+                <option value="file_user">📋 Según columna de técnico en el Excel (si el archivo la incluye)</option>
+              </select>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:11.5px;color:var(--muted)">
+              <input type="checkbox" id="ot-replace-memory" checked style="accent-color:var(--accent1);cursor:pointer;">
+              <label for="ot-replace-memory" style="cursor:pointer;margin:0">Reemplazar actividades en memoria al cargar nuevo archivo</label>
+            </div>
+
+            <div style="font-size:11px;color:var(--text);margin-bottom:12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:9px 12px;line-height:1.6">
+              <span style="color:var(--accent1);font-weight:700;">⏱ Tiempos prudenciales inteligentes por tipo de actividad:</span><br>
+              • <b>Blandas</b> (filtros, rejillas, revisión visual, rutinas): <b>25 a 45 min</b> (máx. 1h)<br>
+              • <b>Medias</b> (mantenimiento preventivo general, drenajes, ventilador): <b>50 a 70 min</b><br>
+              • <b>Pesadas</b> (compresor, motor, overhaul, fugas, desmontaje): <b>90 a 150 min</b> (1.5h a 2.5h)
+            </div>
+
+            <div class="fgroup" style="margin-bottom:8px">
               <label>Días de Descanso a ignorar (YYYY-MM-DD, separados por coma):</label>
               <input type="text" id="ot-rest-days" placeholder="Ej: 2026-10-15, 2026-10-16">
             </div>
@@ -2289,7 +2309,8 @@
     const MEALS = [
       { name: '🍳 Desayuno', start: 6 * 60, end: 8 * 60, dur: 45 },
       { name: '🍽 Almuerzo', start: 12 * 60, end: 15 * 60, dur: 45 },
-      { name: '🌙 Cena', start: 18 * 60, end: 20 * 60, dur: 45 },
+      { name: '🥪 Cena', start: 18 * 60, end: 20 * 60, dur: 45 },
+      { name: '🌙 Refrigerio nocturno', start: 25 * 60, end: 27 * 60, dur: 45 }, // 01:00 a 03:00 am en turnos noche
     ];
     const TRANSIT_MIN = 15;
 
@@ -2401,6 +2422,143 @@
       return rawUpper;
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // CÁLCULO INTELIGENTE DE DURACIÓN ("TIEMPOS PRUDENCIALES")
+    // • Actividades blandas: entre 25 y 45 min (máx. 1h)
+    // • Actividades pesadas: entre 90 y 150 min (jamás 20 min)
+    // • Actividades medias: entre 50 y 70 min
+    // • Variabilidad natural determinista (no todas las actividades idénticas)
+    // ══════════════════════════════════════════════════════════════
+    function calcSmartDuration(text, explicitMin = null, index = 0) {
+      const clean = String(text || '').toLowerCase();
+
+      // Palabras clave para ACTIVIDADES PESADAS (90 a 150 min - jamás 20 min)
+      const heavyKw = [
+        'overhaul', 'desmontaje', 'compresor', 'motor', 'reparacion', 'reparación',
+        'reemplazo', 'cambio de', 'refrigerante', 'fuga', 'quimic', 'químic',
+        'bomba', 'bobinado', 'potencia', 'tablero', 'pesad', 'correctivo mayor',
+        'soldadura', 'reparar fuga', 'embobinado', 'desarme', 'alineamiento pesado'
+      ];
+
+      // Palabras clave para ACTIVIDADES BLANDAS (25 a 45 min - máximo 1 hora)
+      const softKw = [
+        'filtro de aire', 'limpieza de filtro', 'limpieza del filtro', 'filtro',
+        'rejilla', 'rejillas', 'superficial', 'polvo', 'visual', 'inspeccion', 'inspección',
+        'comprobacion', 'comprobación', 'verificacion', 'verificación', 'prueba de',
+        'nivel de ruido', 'ruido', 'encendido', 'apagado', 'control', 'temperatura',
+        'blanda', 'ligera', 'rutina basica', 'rutina básica', 'rotulación', 'revision visual',
+        'estado general', 'velocidades'
+      ];
+
+      // Palabras clave para ACTIVIDADES MEDIAS (50 a 70 min)
+      const mediumKw = [
+        'drenaje', 'bandeja', 'ventilador', 'condensado', 'mantenimiento preventivo',
+        'mantenimiento general', 'climatizacion', 'climatización', 'unidad interior',
+        'limpieza interna', 'circulación'
+      ];
+
+      const isHeavy = heavyKw.some(k => clean.includes(k));
+      const isSoft = softKw.some(k => clean.includes(k));
+      const isMedium = mediumKw.some(k => clean.includes(k));
+
+      // Variación determinista según índice y longitud para naturalidad
+      const jitter = (((index * 7 + clean.length) % 5) - 2) * 5; // -10, -5, 0, +5, +10
+
+      let baseMin = 50;
+      let category = 'Media';
+
+      if (isHeavy) {
+        baseMin = 120;
+        category = 'Pesada';
+      } else if (isSoft && !isMedium) {
+        baseMin = 35;
+        category = 'Blanda';
+      } else if (isSoft && isMedium) {
+        baseMin = 45;
+        category = 'Blanda-Media';
+      } else {
+        baseMin = 60;
+        category = 'Media';
+      }
+
+      let dur = baseMin + jitter;
+
+      // Límites estrictos según la indicación del usuario:
+      // - Blandas: jamás más de 1 hora (60 min)
+      // - Pesadas: jamás 20 min (mínimo 90 min)
+      if (category === 'Pesada') {
+        dur = Math.max(90, Math.min(180, dur));
+      } else if (category === 'Blanda' || category === 'Blanda-Media') {
+        dur = Math.max(25, Math.min(55, dur));
+      } else {
+        dur = Math.max(45, Math.min(75, dur));
+      }
+
+      // Si el archivo traía duración explícita, se respeta con ajuste de coherencia
+      if (explicitMin && explicitMin > 0) {
+        if (isHeavy && explicitMin < 60) dur = Math.max(90, explicitMin * 2);
+        else if (isSoft && explicitMin > 60) dur = 50;
+        else dur = explicitMin;
+      }
+
+      return { durMin: Math.round(dur), category };
+    }
+
+    // Obtiene los códigos de técnicos que realmente tienen turnos de trabajo en el periodo activo
+    function getActiveTechniciansInMonth() {
+      const activeMonth = ACTIVE_DIST_MONTH || (document.getElementById('dist-month')?.value || '');
+      const eff = DB.schedules.filter(s => {
+        if (activeMonth && s.fecha && !s.fecha.startsWith(activeMonth)) return false;
+        const isRest = /^(DESCANSO|DESC|REST|LIBRE|DAY\s*OFF|OFF)/i.test(String(s.horario || '').trim());
+        return !isRest;
+      });
+      const codes = [...new Set(eff.map(s => resolveUserCode(s.codigo)).filter(Boolean))];
+      if (codes.length > 0) return codes;
+      // Fallback a los usuarios activos de DB.users
+      return DB.users.filter(u => u.activo === '1').map(u => u.codigo);
+    }
+
+    // Actualiza el dropdown de asignación de OTs con los técnicos reales del horario cargado
+    function populateTargetTechSelect() {
+      const sel = document.getElementById('ot-assign-target');
+      if (!sel) return;
+      const curVal = sel.value;
+      const activeCodes = getActiveTechniciansInMonth();
+
+      let html = `
+        <option value="auto_distribute">⚡ Distribuir equitativamente entre técnicos con turno en el horario (Recomendado)</option>
+        <option value="file_user">📋 Según columna de técnico en el Excel (si el archivo la incluye)</option>
+      `;
+
+      if (activeCodes.length > 0) {
+        html += `<optgroup label="Asignar todas las actividades a un técnico específico:">`;
+        activeCodes.forEach(code => {
+          const uInfo = DB.users.find(u => normCode(u.codigo) === normCode(code));
+          const name = uInfo?.nombre || code;
+          html += `<option value="${code}">👤 ${name} (${code})</option>`;
+        });
+        html += `</optgroup>`;
+      }
+
+      sel.innerHTML = html;
+      if (curVal && (curVal === 'auto_distribute' || curVal === 'file_user' || activeCodes.includes(curVal))) {
+        sel.value = curVal;
+      }
+    }
+
+    // Al cambiar el técnico destino en el selector, reasignar al instante
+    function onTargetTechChange() {
+      if (_rawUploadedOTRows && _rawUploadedOTRows.length > 0) {
+        reprocessLoadedOTs();
+      } else if (DB.ots.length > 0 && DB.schedules.length > 0) {
+        buildDistribution();
+      }
+    }
+
+    let _rawUploadedOTRows = null;
+    let _rawUploadedFileName = '';
+    let _rawUploadedFileNumCols = 0;
+
     const AUTO_SCHEDULE = {
       enabled: false,
       shift: '07:00 – 16:00',
@@ -2487,6 +2645,7 @@
         });
       }
 
+      populateTargetTechSelect();
       refreshAll();
       // Auto-refresh cada 2 minutos para mejorar la sensación de "tiempo real"
       setInterval(() => {
@@ -2651,6 +2810,7 @@
         });
         updateStatusRows();
         populateFilters();
+        populateTargetTechSelect();
         if (!ACTIVE_DIST_MONTH && DB.schedules.length > 0) {
           const months = [...new Set(DB.schedules.map(s => s.fecha ? s.fecha.substring(0, 7) : '').filter(m => /^\d{4}-\d{2}$/.test(m)))].sort();
           if (months.length > 0) {
@@ -3073,7 +3233,12 @@
       loadScheduleTable(); // refresca el grid
     }
 
-    // ── OT FILE PROCESSING (con deduplicación contra la DB) ──
+    // ── OT & ACTIVIDADES PROCESSING (compatibilidad con OTs detalladas y listas de actividades) ──
+    function reprocessLoadedOTs() {
+      if (!_rawUploadedOTRows || !_rawUploadedOTRows.length) return;
+      processOTRows(_rawUploadedOTRows, _rawUploadedFileName, _rawUploadedFileNumCols, true);
+    }
+
     function handleOTFile(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -3083,12 +3248,6 @@
       infoEl.style.display = 'none';
       document.getElementById('btn-upload-ots').disabled = true;
       _processedOTs = null;
-
-      // OTs que YA existen en la base (usuario + código OT), para no
-      // duplicarlas ni alterar el horario ya asignado a las que están.
-      const existingOTKeys = new Set(
-        DB.ots.map(o => resolveUserCode(o.codigo_usuario) + '||' + String(o.codigo_ot || '').trim())
-      );
 
       const reader = new FileReader();
       reader.onload = e => {
@@ -3105,114 +3264,12 @@
           const numCols = firstRow.length;
           otLog('info', `✓ ${raw.length} filas · ${numCols} columnas detectadas`);
 
-          const colInfo = [];
-          if (numCols >= 1) colInfo.push(`Col.1 (Usuario): "${String(firstRow[0] || '').substring(0, 30)}"`);
-          if (numCols >= 28) colInfo.push(`Col.28 (OT parte 1): "${String(firstRow[27] || '').substring(0, 30)}"`);
-          if (numCols >= 29) colInfo.push(`Col.29 (OT parte 2): "${String(firstRow[28] || '').substring(0, 30)}"`);
-          if (numCols >= 39) colInfo.push(`Col.39 (Catálogo): "${String(firstRow[38] || '').substring(0, 30)}"`);
-          if (numCols >= 7) colInfo.push(`Col.7 (Duración): "${String(firstRow[6] || '').substring(0, 20)}"`);
-          if (numCols >= 81) colInfo.push(`Col.81 (Equipo): "${String(firstRow[80] || '').substring(0, 30)}"`);
-          if (numCols >= 86) colInfo.push(`Col.86 (Ubicación): "${String(firstRow[85] || '').substring(0, 30)}"`);
-          infoEl.innerHTML = '<b>Columnas detectadas (fila 1):</b><br>' + colInfo.join('<br>');
-          infoEl.style.display = 'block';
-          otLog('info', `📏 Columnas detectadas: ${numCols}`);
+          _rawUploadedOTRows = raw;
+          _rawUploadedFileName = file.name;
+          _rawUploadedFileNumCols = numCols;
 
-          const isHeader = /^(usuario|user|codigo|tecnico|empleado|col|#)/i.test(String(firstRow[0] || '').trim()) ||
-            (firstRow[0] === '' && firstRow.some(v => v !== ''));
-          const dataRows = isHeader ? raw.slice(1) : raw;
-          otLog('info', `${isHeader ? '⚙ Fila de encabezado detectada y omitida' : '⚙ Sin fila de encabezado, procesando desde fila 1'}`);
+          processOTRows(raw, file.name, numCols, false);
 
-          const validRows = dataRows.filter(row => row.some(v => String(v).trim() !== ''));
-          otLog('ok', `✓ ${validRows.length} filas de datos válidas`);
-
-          if (!validRows.length) { otLog('err', '✗ No se encontraron filas de datos válidas'); return; }
-
-          const byUser = {};
-          _processedOTs = [];
-
-          const processedCodes = new Set();
-          let skippedExisting = 0;
-          validRows.forEach((row, idx) => {
-            const rawUser = String(row[0] || '').trim();
-            if (!rawUser) return;
-            const codUser = resolveUserCode(rawUser);
-
-            const ot1 = String(row[27] || '').trim();
-            const ot2 = String(row[28] || '').trim();
-            const codigoOT = [ot1, ot2].filter(Boolean).join(' - ') || `OT-${idx + 1}`;
-
-            // ── Deduplicación dentro del mismo archivo ──
-            if (processedCodes.has(codigoOT)) return;
-            processedCodes.add(codigoOT);
-
-            // ── Deduplicación contra OTs ya guardadas en la base ──
-            // Así el horario ya asignado a esa OT no se toca ni se duplica.
-            const globalKey = codUser + '||' + codigoOT;
-            if (existingOTKeys.has(globalKey)) { skippedExisting++; return; }
-
-            let ubicacion = '';
-            if (numCols >= 86) ubicacion = String(row[85] || '').trim();
-            if (!ubicacion && numCols >= 85) ubicacion = String(row[84] || '').trim();
-
-            let equipo = '';
-            if (numCols >= 81) equipo = String(row[80] || '').trim();
-            if (!equipo && numCols >= 80) equipo = String(row[79] || '').trim();
-
-            let durMin = 60;
-            const durRaw = row[6];
-            if (durRaw !== undefined && durRaw !== null && durRaw !== '') {
-              const parsed = parseFloat(String(durRaw).replace(',', '.'));
-              if (!isNaN(parsed) && parsed > 0) {
-                durMin = parsed <= 24 ? Math.round(parsed * 60) : Math.round(parsed);
-              }
-            }
-            durMin = Math.max(15, Math.min(durMin, 480));
-
-            const catalogo = String(row[38] || '').trim();  // COLUMNA 39 (índice 38) ✅
-            const contrato = String(row[11] || row[12] || '').trim();
-
-            _processedOTs.push({
-              codigo_usuario: codUser,
-              codigo_ot: codigoOT,
-              ubicacion: ubicacion,
-              equipo: equipo,
-              duracion_min: durMin,
-              catalogo: catalogo,
-              contrato: contrato,
-              proveedor: ''
-            });
-            byUser[codUser] = (byUser[codUser] || 0) + 1;
-          });
-
-          const userList = Object.entries(byUser).sort((a, b) => b[1] - a[1]);
-          userList.forEach(([u, c]) => otLog('ok', `  → ${u}: ${c} OT${c !== 1 ? 's' : ''} nueva(s)`));
-          otLog('ok', `📊 Total nuevas: ${_processedOTs.length} OTs · ${userList.length} técnico(s)`);
-          if (skippedExisting > 0) otLog('warn', `⚠ ${skippedExisting} OT(s) omitida(s) por ya existir en la base (no se duplican ni se altera su horario ya asignado)`);
-
-          if (numCols < 86) otLog('warn', `⚠ Archivo tiene ${numCols} columnas. Columna 86 (ubicación) no disponible.`);
-          if (numCols < 81) otLog('warn', `⚠ Columna 81 (equipo) no disponible.`);
-          if (_processedOTs.length === 0) {
-            otLog(skippedExisting > 0 ? 'warn' : 'err', skippedExisting > 0
-              ? '✓ No hay OTs nuevas: todas ya existían en la base.'
-              : '✗ No se procesaron OTs. Verifica que la columna 1 tenga códigos de usuario.');
-            return;
-          }
-
-          // Integración en memoria inmediata para calcular distribución al instante
-          const currentOTKeys = new Set(DB.ots.map(o => resolveUserCode(o.codigo_usuario) + '||' + String(o.codigo_ot || '').trim()));
-          _processedOTs.forEach(o => {
-            if (!currentOTKeys.has(o.codigo_usuario + '||' + o.codigo_ot)) {
-              DB.ots.push(o);
-            }
-          });
-
-          document.getElementById('btn-upload-ots').disabled = false;
-          otLog('ok', `✅ Listo para subir. Haz clic en "Procesar y Subir OTs"`);
-
-          if (DB.schedules.length > 0) {
-            buildDistribution();
-            otLog('ok', `⚡ ¡Distribución recalculada inmediatamente con las OTs cargadas!`);
-          }
         } catch (err) {
           otLog('err', '✗ Error procesando archivo: ' + err.message);
           console.error('handleOTFile error:', err);
@@ -3220,6 +3277,239 @@
       };
       reader.onerror = () => otLog('err', '✗ No se pudo leer el archivo');
       reader.readAsBinaryString(file);
+    }
+
+    function processOTRows(raw, fileName, numCols, isReassign = false) {
+      const firstRow = raw[0] || [];
+      const colInfo = [];
+
+      // 1. Detectar tipo de archivo y mapeo inteligente de columnas
+      const isEnterpriseERP = numCols >= 25;
+      let colIdxUsuario = -1;
+      let colIdxOT = -1;
+      let colIdxActividad = -1;
+      let colIdxEquipo = -1;
+      let colIdxUbicacion = -1;
+      let colIdxDuracion = -1;
+
+      firstRow.forEach((colName, cIdx) => {
+        const h = String(colName || '').trim().toLowerCase();
+        if (colIdxUsuario === -1 && /^(usuario|user|tecnico|t[eé]cnico|personal|colaborador|empleado|responsable)/i.test(h)) colIdxUsuario = cIdx;
+        else if (colIdxActividad === -1 && /^(actividad|tarea|descripci[oó]n|descripcion|detalle|trabajo|servicio|mantenimiento|cat[aá]logo|catalogo)/i.test(h)) colIdxActividad = cIdx;
+        else if (colIdxOT === -1 && /^(ot|c[oó]digo|codigo|n[°º]|id|num|número|numero|item)/i.test(h)) colIdxOT = cIdx;
+        else if (colIdxEquipo === -1 && /^(equipo|activo|m[aá]quina|maquina|sistema|unidad)/i.test(h)) colIdxEquipo = cIdx;
+        else if (colIdxUbicacion === -1 && /^(ubicaci[oó]n|ubicacion|sucursal|sede|habitaci[oó]n|habitacion|piso|área|area|lugar)/i.test(h)) colIdxUbicacion = cIdx;
+        else if (colIdxDuracion === -1 && /^(duraci[oó]n|duracion|tiempo|horas|minutos|min|hrs)/i.test(h)) colIdxDuracion = cIdx;
+      });
+
+      const isHeader = colIdxActividad !== -1 || colIdxUsuario !== -1 || colIdxOT !== -1 ||
+        /^(usuario|user|codigo|tecnico|empleado|col|#|n[°º]|actividad)/i.test(String(firstRow[0] || '').trim()) ||
+        (firstRow[0] === '' && firstRow.some(v => v !== ''));
+
+      const dataRows = isHeader ? raw.slice(1) : raw;
+      const validRows = dataRows.filter(row => row.some(v => String(v).trim() !== ''));
+
+      if (!validRows.length) { otLog('err', '✗ No se encontraron filas de datos válidas'); return; }
+
+      // Si no es ERP empresarial y no se encontró columna de actividad por encabezado:
+      // Elegir la columna con mayor longitud promedio de texto (la descripción del trabajo)
+      if (!isEnterpriseERP && colIdxActividad === -1) {
+        let maxAvgLen = 0;
+        let bestCol = 1;
+        for (let c = 0; c < Math.min(10, numCols); c++) {
+          let totalLen = 0, count = 0;
+          for (let r = 0; r < Math.min(20, validRows.length); r++) {
+            const val = String(validRows[r][c] || '').trim();
+            if (val) { totalLen += val.length; count++; }
+          }
+          const avg = count ? totalLen / count : 0;
+          if (avg > maxAvgLen) { maxAvgLen = avg; bestCol = c; }
+        }
+        colIdxActividad = bestCol;
+        if (colIdxOT === -1) colIdxOT = bestCol === 0 ? 1 : 0;
+      }
+
+      // Destino de asignación de técnicos
+      const targetTechSelect = document.getElementById('ot-assign-target');
+      const targetChoice = targetTechSelect ? targetTechSelect.value : 'auto_distribute';
+      const activeTechs = getActiveTechniciansInMonth();
+
+      // ¿El archivo tiene columna de técnico real?
+      const firstRowUserVal = String(validRows[0]?.[colIdxUsuario !== -1 ? colIdxUsuario : 0] || '').trim();
+      const fileHasValidTechCol = colIdxUsuario !== -1 || (isEnterpriseERP && firstRowUserVal.length > 2 && !/^\d+$/.test(firstRowUserVal));
+
+      let assignMode = 'distribute';
+      if (targetChoice && targetChoice !== 'auto_distribute' && targetChoice !== 'file_user') {
+        assignMode = 'specific';
+      } else if (targetChoice === 'file_user' && fileHasValidTechCol) {
+        assignMode = 'file';
+      } else if (!fileHasValidTechCol) {
+        assignMode = 'distribute';
+      } else {
+        assignMode = 'file';
+      }
+
+      otLog('info', `🎯 Destino: ${
+        assignMode === 'specific' ? `Asignar a técnico seleccionado (${targetChoice})` :
+        assignMode === 'distribute' ? `Distribuir equitativamente entre los ${activeTechs.length} técnicos con horario activo` :
+        `Según columna de técnico en el Excel`
+      }`);
+
+      const replaceMem = document.getElementById('ot-replace-memory')?.checked ?? true;
+      if (replaceMem && !isReassign) {
+        // Limpiar residuos en memoria
+        DB.ots = DB.ots.filter(o => !/^\d+$/.test(resolveUserCode(o.codigo_usuario)));
+      }
+
+      const existingOTKeys = replaceMem ? new Set() : new Set(
+        DB.ots.map(o => resolveUserCode(o.codigo_usuario) + '||' + String(o.codigo_ot || '').trim())
+      );
+
+      _processedOTs = [];
+      const byUser = {};
+      const processedCodes = new Set();
+      let skippedExisting = 0;
+      let countBlandas = 0, countMedias = 0, countPesadas = 0;
+
+      validRows.forEach((row, idx) => {
+        let codUser = '';
+        if (assignMode === 'specific') {
+          codUser = targetChoice;
+        } else if (assignMode === 'distribute') {
+          codUser = activeTechs.length > 0 ? activeTechs[idx % activeTechs.length] : 'HIM.TECNICO';
+        } else {
+          const rawUser = String(row[colIdxUsuario !== -1 ? colIdxUsuario : 0] || '').trim();
+          codUser = resolveUserCode(rawUser);
+          if (!codUser || /^\d+$/.test(codUser)) {
+            codUser = activeTechs.length > 0 ? activeTechs[idx % activeTechs.length] : resolveUserCode(rawUser);
+          }
+        }
+
+        // Extraer texto de la actividad
+        let actividadText = '';
+        if (isEnterpriseERP) {
+          actividadText = String(row[38] || row[27] || '').trim();
+        } else if (colIdxActividad !== -1) {
+          actividadText = String(row[colIdxActividad] || '').trim();
+        }
+
+        // Extraer código OT
+        let codigoOT = '';
+        if (isEnterpriseERP) {
+          const ot1 = String(row[27] || '').trim();
+          const ot2 = String(row[28] || '').trim();
+          codigoOT = [ot1, ot2].filter(Boolean).join(' - ') || `OT-${idx + 1}`;
+        } else {
+          const rawOT = colIdxOT !== -1 ? String(row[colIdxOT] || '').trim() : '';
+          if (rawOT) {
+            codigoOT = /^\d+$/.test(rawOT) ? `OT-${rawOT.padStart(2, '0')}` : rawOT;
+          } else {
+            codigoOT = `OT-${String(idx + 1).padStart(2, '0')}`;
+          }
+        }
+
+        const dedupKey = codUser + '||' + codigoOT;
+        if (processedCodes.has(dedupKey)) return;
+        processedCodes.add(dedupKey);
+
+        if (existingOTKeys.has(dedupKey)) { skippedExisting++; return; }
+
+        // Extraer duración y clasificar tiempo prudencial inteligente
+        let durExplicit = null;
+        const rawDur = colIdxDuracion !== -1 ? row[colIdxDuracion] : (isEnterpriseERP ? row[6] : null);
+        if (rawDur !== undefined && rawDur !== null && rawDur !== '') {
+          const parsed = parseFloat(String(rawDur).replace(',', '.'));
+          if (!isNaN(parsed) && parsed > 0) {
+            durExplicit = parsed <= 24 ? Math.round(parsed * 60) : Math.round(parsed);
+          }
+        }
+
+        const smart = calcSmartDuration(actividadText || fileName, durExplicit, idx);
+        if (smart.category === 'Pesada') countPesadas++;
+        else if (smart.category.includes('Blanda')) countBlandas++;
+        else countMedias++;
+
+        // Extraer o inferir equipo
+        let equipo = '';
+        if (isEnterpriseERP) {
+          if (numCols >= 81) equipo = String(row[80] || '').trim();
+          if (!equipo && numCols >= 80) equipo = String(row[79] || '').trim();
+        } else if (colIdxEquipo !== -1) {
+          equipo = String(row[colIdxEquipo] || '').trim();
+        }
+        if (!equipo) {
+          const combo = (actividadText + ' ' + fileName).toLowerCase();
+          if (combo.includes('fan coil')) equipo = 'Fan Coil';
+          else if (combo.includes('chiller')) equipo = 'Chiller';
+          else if (combo.includes('bomba')) equipo = 'Bomba de Agua';
+          else if (combo.includes('condensador')) equipo = 'Condensador';
+          else if (combo.includes('aire acondicionado') || combo.includes('climatiz')) equipo = 'Aire Acondicionado';
+          else equipo = 'Equipo Climatización';
+        }
+
+        // Extraer ubicación
+        let ubicacion = '';
+        if (isEnterpriseERP) {
+          if (numCols >= 86) ubicacion = String(row[85] || '').trim();
+          if (!ubicacion && numCols >= 85) ubicacion = String(row[84] || '').trim();
+        } else if (colIdxUbicacion !== -1) {
+          ubicacion = String(row[colIdxUbicacion] || '').trim();
+        }
+        if (!ubicacion) {
+          const mHab = actividadText.match(/habitaci[oó]n\s*(\d+)?/i);
+          ubicacion = mHab ? (mHab[1] ? `Habitación ${mHab[1]}` : 'Habitación') : 'Sede Principal';
+        }
+
+        const contrato = isEnterpriseERP ? String(row[11] || row[12] || '').trim() : '';
+
+        _processedOTs.push({
+          codigo_usuario: codUser,
+          codigo_ot: codigoOT,
+          ubicacion: ubicacion,
+          equipo: equipo,
+          duracion_min: smart.durMin,
+          catalogo: actividadText || codigoOT,
+          contrato: contrato,
+          categoria: smart.category,
+          proveedor: ''
+        });
+
+        byUser[codUser] = (byUser[codUser] || 0) + 1;
+      });
+
+      const userList = Object.entries(byUser).sort((a, b) => b[1] - a[1]);
+      userList.forEach(([u, c]) => {
+        const uInfo = DB.users.find(x => normCode(x.codigo) === normCode(u));
+        const uLabel = uInfo?.nombre ? `${uInfo.nombre} (${u})` : u;
+        otLog('ok', `  👤 ${uLabel}: ${c} actividad(es) asignada(s)`);
+      });
+
+      otLog('ok', `⏱ Tiempos asignados: ${countBlandas} blandas (25–45m) · ${countMedias} medias (50–70m) · ${countPesadas} pesadas (90–150m)`);
+      otLog('ok', `📊 Total actividades preparadas: ${_processedOTs.length} · ${userList.length} técnico(s)`);
+      if (skippedExisting > 0) otLog('warn', `⚠ ${skippedExisting} actividad(es) ya existentes omitidas`);
+
+      if (_processedOTs.length === 0) {
+        otLog('err', '✗ No se procesó ninguna actividad.');
+        return;
+      }
+
+      // Integración en memoria
+      if (replaceMem) {
+        const newKeys = new Set(_processedOTs.map(o => o.codigo_usuario + '||' + o.codigo_ot));
+        DB.ots = DB.ots.filter(o => !newKeys.has(o.codigo_usuario + '||' + o.codigo_ot) && !/^\d+$/.test(resolveUserCode(o.codigo_usuario)));
+      }
+
+      _processedOTs.forEach(o => {
+        DB.ots.push(o);
+      });
+
+      document.getElementById('btn-upload-ots').disabled = false;
+      otLog('ok', `✅ ¡Listo! Actividades asignadas a turnos reales en memoria.`);
+
+      if (DB.schedules.length > 0) {
+        buildDistribution();
+        otLog('ok', `⚡ ¡Distribución recalculada inmediatamente según los horarios cargados!`);
+      }
     }
 
     function otLog(type, msg) {
@@ -3454,10 +3744,15 @@
           _processedSchedules.forEach(s => schedMap.set(`${normCode(s.codigo)}||${s.fecha}`, s));
           DB.schedules = Array.from(schedMap.values());
 
+          populateTargetTechSelect();
+
           document.getElementById('btn-upload-sch').disabled = false;
           schLog('info', `⚡ Horarios aplicados en memoria para ${ACTIVE_DIST_MONTH}. Haz clic en "Subir Horarios a la Base" para guardarlos.`);
 
-          if (DB.ots.length > 0) {
+          if (_rawUploadedOTRows && _rawUploadedOTRows.length > 0) {
+            reprocessLoadedOTs();
+            schLog('ok', `🎯 ¡Actividades reasignadas inmediatamente dentro de los turnos cargados!`);
+          } else if (DB.ots.length > 0) {
             buildDistribution();
             schLog('ok', `🎯 ¡Actividades asignadas inmediatamente dentro de los turnos de trabajo!`);
           }
@@ -3606,6 +3901,8 @@
       DB.ots.forEach(o => {
         const code = resolveUserCode(o.codigo_usuario);
         if (!code) return;
+        // Ignorar códigos puramente numéricos de cargas residuales inválidas
+        if (/^\d+$/.test(code) && !DB.users.some(u => normCode(u.codigo) === normCode(code))) return;
         if (!otByCode[code]) otByCode[code] = [];
         otByCode[code].push({
           equipo: o.equipo || '',
@@ -3613,6 +3910,7 @@
           catalogo: o.catalogo || o.codigo_ot || '',
           ot: o.codigo_ot || '',
           contrato: o.contrato || '',
+          categoria: o.categoria || '',
           durMin: Math.max(15, parseInt(o.duracion_min) || 60),
         });
       });
@@ -4031,6 +4329,7 @@
             <div class="si-tags">
               <span class="tag tag-blue">🖥 ${item.equipo}</span>
               <span class="tag tag-muted">⏱ ${fmtDur(item.durMin)}</span>
+              ${item.categoria ? `<span class="tag" style="background:${item.categoria === 'Pesada' ? '#ff526318' : (item.categoria.includes('Blanda') ? '#a855f718' : '#00e5b818')};color:${item.categoria === 'Pesada' ? 'var(--accent2)' : (item.categoria.includes('Blanda') ? 'var(--accent5)' : 'var(--accent1)')};border:1px solid ${item.categoria === 'Pesada' ? '#ff526330' : (item.categoria.includes('Blanda') ? '#a855f730' : '#00e5b830')}">${item.categoria}</span>` : ''}
               ${item.ot ? `<span class="tag tag-green">${item.ot}</span>` : ''}
             </div>
             <div class="check-wrap" data-ckey="${ckey}" onclick="toggleTask('${g.code}','${g.dkey}',${taskIdx})">
@@ -4380,11 +4679,13 @@ tr.row-done td{color:#94a3b8;}
 
             rows.push({
               Usuario: g.code,
+              Colaborador: g.uName || g.code,
               Fecha: formatDateES(g.dkey),
               Día: g.day,
               Inicio: hhmmPlain(t.startMin),
               Fin: hhmmPlain(t.endMin),
               Duración: fmtDur(t.durMin),
+              Tipo: t.categoria || 'Estándar',
               Actividad: t.catalogo || t.equipo || '—',
               Equipo: t.equipo || '—',
               OT: t.ot || '—',
