@@ -2654,74 +2654,85 @@
     const WEEKEND = new Set([0, 6]); // domingo=0, sábado=6
 
     // ── INIT ─────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
+    function initApp() {
+      setStatus('ðŸ”„ Conectando con Google Sheetsâ€¦', '');
       if (!API_URL || API_URL.includes('TU_URL_AQUI')) {
-        document.getElementById('config-banner').style.display = 'flex';
-        setStatus('⚠ Configura la URL del Apps Script', 'err');
+        const cb = document.getElementById('config-banner');
+        if (cb) cb.style.display = 'flex';
+        setStatus('âš  Configura la URL del Apps Script', 'err');
         return;
       }
-      initColorPicker();
-      const now = new Date();
-      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      
-      const schMonthSel = document.getElementById('sch-month-sel');
-      if (schMonthSel) schMonthSel.value = currentMonth;
 
-      // Inicializar mes activo de distribución con el mes actual o de la programación
-      ACTIVE_DIST_MONTH = currentMonth;
-      const distMonthInput = document.getElementById('dist-month');
-      if (distMonthInput) distMonthInput.value = currentMonth;
-      updateDistMonthBadge();
+      try {
+        initColorPicker();
+        const now = new Date();
+        const currentMonth = ${now.getFullYear()}-;
+        
+        const schMonthSel = document.getElementById('sch-month-sel');
+        if (schMonthSel) schMonthSel.value = currentMonth;
 
-      AUTO_SCHEDULE.month = currentMonth;
-      const autoMonthInput = document.getElementById('auto-sch-month');
-      if (autoMonthInput) autoMonthInput.value = currentMonth;
-      const autoEnabledSel = document.getElementById('auto-sch-enabled');
-      if (autoEnabledSel) autoEnabledSel.value = AUTO_SCHEDULE.enabled ? '1' : '0';
-      const autoShiftSel = document.getElementById('auto-sch-shift');
-      if (autoShiftSel) autoShiftSel.value = AUTO_SCHEDULE.shift;
-      const autoSkipSel = document.getElementById('auto-sch-skip-sunday');
-      if (autoSkipSel) autoSkipSel.value = AUTO_SCHEDULE.skipSunday ? '1' : '0';
+        ACTIVE_DIST_MONTH = currentMonth;
+        const distMonthInput = document.getElementById('dist-month');
+        if (distMonthInput) distMonthInput.value = currentMonth;
+        updateDistMonthBadge();
 
-      // Drag & Drop para OTs
-      const dz = document.getElementById('ot-dropzone');
-      const fi = document.getElementById('ot-file');
-      if (dz && fi) {
-        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
-        dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-        dz.addEventListener('drop', e => {
-          e.preventDefault(); dz.classList.remove('drag');
-          if (e.dataTransfer.files.length) {
-            fi.files = e.dataTransfer.files;
-            handleOTFile({ target: fi });
-          }
-        });
+        AUTO_SCHEDULE.month = currentMonth;
+        const autoMonthInput = document.getElementById('auto-sch-month');
+        if (autoMonthInput) autoMonthInput.value = currentMonth;
+        const autoEnabledSel = document.getElementById('auto-sch-enabled');
+        if (autoEnabledSel) autoEnabledSel.value = AUTO_SCHEDULE.enabled ? '1' : '0';
+        const autoShiftSel = document.getElementById('auto-sch-shift');
+        if (autoShiftSel) autoShiftSel.value = AUTO_SCHEDULE.shift;
+        const autoSkipSel = document.getElementById('auto-sch-skip-sunday');
+        if (autoSkipSel) autoSkipSel.value = AUTO_SCHEDULE.skipSunday ? '1' : '0';
+
+        // Drag & Drop para OTs
+        const dz = document.getElementById('ot-dropzone');
+        const fi = document.getElementById('ot-file');
+        if (dz && fi) {
+          dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+          dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+          dz.addEventListener('drop', e => {
+            e.preventDefault(); dz.classList.remove('drag');
+            if (e.dataTransfer.files.length) {
+              fi.files = e.dataTransfer.files;
+              handleOTFile({ target: fi });
+            }
+          });
+        }
+
+        // Drag & Drop para Horarios
+        const schDz = document.getElementById('sch-dropzone');
+        const schFi = document.getElementById('sch-file');
+        if (schDz && schFi) {
+          schDz.addEventListener('dragover', e => { e.preventDefault(); schDz.classList.add('drag'); });
+          schDz.addEventListener('dragleave', () => schDz.classList.remove('drag'));
+          schDz.addEventListener('drop', e => {
+            e.preventDefault(); schDz.classList.remove('drag');
+            if (e.dataTransfer.files.length) {
+              schFi.files = e.dataTransfer.files;
+              handleScheduleFile({ target: schFi });
+            }
+          });
+        }
+
+        populateTargetTechSelect();
+      } catch(err) {
+        console.error('initApp UI error:', err);
       }
 
-      // Drag & Drop para Horarios
-      const schDz = document.getElementById('sch-dropzone');
-      const schFi = document.getElementById('sch-file');
-      if (schDz && schFi) {
-        schDz.addEventListener('dragover', e => { e.preventDefault(); schDz.classList.add('drag'); });
-        schDz.addEventListener('dragleave', () => schDz.classList.remove('drag'));
-        schDz.addEventListener('drop', e => {
-          e.preventDefault(); schDz.classList.remove('drag');
-          if (e.dataTransfer.files.length) {
-            schFi.files = e.dataTransfer.files;
-            handleScheduleFile({ target: schFi });
-          }
-        });
-      }
-
-      populateTargetTechSelect();
       refreshAll();
-      // Auto-refresh cada 2 minutos para mejorar la sensación de "tiempo real"
+
       setInterval(() => {
         if (!document.hidden) refreshAll();
       }, 2 * 60 * 1000);
-    });
+    }
 
-    // ── HORARIO AUTOMÁTICO — controles UI ────────────────
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
     function onAutoScheduleChange() {
       const enabledSel = document.getElementById('auto-sch-enabled');
       const shiftSel = document.getElementById('auto-sch-shift');
@@ -3063,7 +3074,7 @@
     }
 
     function initColorPicker() {
-      const row = document.getElementById('color-picker');
+      const row = document.getElementById('color-picker'); if (!row) return; row.innerHTML = '';
       COLORS.forEach(c => {
         const d = document.createElement('div');
         d.className = 'color-dot';
