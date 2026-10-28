@@ -2324,7 +2324,20 @@
     // ═══════════════════════════════════════════════════════
     // ⚙ CONFIGURACIÓN — PON AQUÍ TU URL DE APPS SCRIPT
     // ═══════════════════════════════════════════════════════
-    const API_URL = "https://script.google.com/macros/s/AKfycbxgBmT32Uhmhv1fdvaYyg9ekCZj7Cr11xW3l1s7TUoPvj0JZhCy2J6N2OPWAdiSt40m/exec";
+        let API_URL = localStorage.getItem('ws_api_url') || "https://script.google.com/macros/s/AKfycbxgBmT32Uhmhv1fdvaYyg9ekCZj7Cr11xW3l1s7TUoPvj0JZhCy2J6N2OPWAdiSt40m/exec";
+    function promptChangeApiUrl() {
+      const cur = localStorage.getItem('ws_api_url') || API_URL;
+      const val = prompt("Pega aquÃ­ tu URL de la aplicaciÃ³n web de Google Apps Script (debe terminar en /exec):", cur);
+      if (val && val.trim()) {
+        const cleanVal = val.trim();
+        localStorage.setItem('ws_api_url', cleanVal);
+        API_URL = cleanVal;
+        showToast("âœ“ URL de Apps Script guardada", "ok");
+        const cb = document.getElementById('config-banner');
+        if (cb) cb.style.display = 'none';
+        refreshAll();
+      }
+    }
     // ═══════════════════════════════════════════════════════
 
     const ADMIN_PW_KEY = "ws_admin_pw"; sessionStorage.setItem("ws_admin_pw", "ADM2026$$");
@@ -3757,7 +3770,7 @@
       }
       schLog('ok', `âœ“ ${raw.length} filas leÃ­das (${sourceTitle || ''}).`);
 
-      // 1. Detectar aÃ±o en las primeras 10 filas
+      // 1. Detectar aÃ±o en las primeras 10 filas (ej: "2026")
       let detectedYear = new Date().getFullYear();
       for (let i = 0; i < Math.min(10, raw.length); i++) {
         const rowStr = raw[i].join(' ');
@@ -3765,16 +3778,36 @@
         if (yMatch) { detectedYear = parseInt(yMatch[1]); break; }
       }
 
-      // 2. Detectar la fila de fechas (ej: "1/10", "01/10", "jue 1/10", "01-10-2026")
+      // Regex para extraer dÃ­a y mes (ej: "jue 1/10", "01/10", "1/10", "31/10", "1-10")
+      // Evita coincidir con horas como "07:00-16:00"
+      const dateCellRegex = /(?:^|\s|[a-zÃ¡Ã©Ã­Ã³ÃºÃ±]{1,4}\.?\s*)(\d{1,2})[\/\-](\d{1,2})(?:\b|$)/i;
+
+      // 2. Detectar la fila de fechas: la fila con MAYOR nÃºmero de columnas de fecha (mÃ­nimo 5)
       let headerRowIdx = -1;
+      let maxDateCols = 0;
+
       for (let i = 0; i < Math.min(25, raw.length); i++) {
-        if (raw[i].some(v => /\d{1,2}[\/\-]\d{1,2}/.test(String(v)))) {
+        let validColsInRow = 0;
+        raw[i].forEach(v => {
+          const str = String(v || '').trim();
+          // Ignorar rangos de hora como 07:00-16:00
+          if (/\d{1,2}:\d{2}\s*[\-â€“]\s*\d{1,2}:\d{2}/.test(str)) return;
+          const m = str.match(dateCellRegex);
+          if (m) {
+            const d = parseInt(m[1], 10);
+            const mo = parseInt(m[2], 10);
+            if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12) {
+              validColsInRow++;
+            }
+          }
+        });
+        if (validColsInRow > maxDateCols && validColsInRow >= 5) {
+          maxDateCols = validColsInRow;
           headerRowIdx = i;
-          break;
         }
       }
 
-      if (headerRowIdx === -1) {
+      if (headerRowIdx === -1 || maxDateCols === 0) {
         schLog('err', 'âœ— No se detectÃ³ la fila con las fechas de los dÃ­as (ej: 01/10, 02/10...).');
         return;
       }
@@ -3786,10 +3819,11 @@
       const dateCols = [];
       headerRow.forEach((val, idx) => {
         const str = String(val).trim();
-        const m = str.match(/(\d{1,2})[\/\-](\d{1,2})/);
+        if (/\d{1,2}:\d{2}/.test(str)) return;
+        const m = str.match(dateCellRegex);
         if (m) {
-          const day = parseInt(m[1]);
-          const month = parseInt(m[2]);
+          const day = parseInt(m[1], 10);
+          const month = parseInt(m[2], 10);
           if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
             const mStr = String(month).padStart(2, '0');
             const dStr = String(day).padStart(2, '0');
@@ -3814,7 +3848,6 @@
       updateDistMonthBadge();
 
       schLog('info', `âœ“ Mes activo detectado: ${fileMonth} Â· ${dateCols.length} dÃ­as de turno mapeados.`);
-
       const SHIFT_MAP = {
         'M01': '07:00 â€“ 16:00',
         'M02': '13:00 â€“ 22:00',
