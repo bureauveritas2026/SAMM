@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -1863,23 +1863,24 @@
               <label>Días de Descanso a ignorar (YYYY-MM-DD, separados por coma):</label>
               <input type="text" id="ot-rest-days" placeholder="Ej: 2026-10-15, 2026-10-16">
             </div>
-            <div class="fgroup" style="margin-bottom:12px">
-              <label>Distribución de OTs</label>
-              <select id="ot-spacing" onchange="loadAndBuild()">
-                <option value="consecutive">Consecutivo (Empaquetar al máximo por día)</option>
-                <option value="even">Equitativo (Distribuir uniformemente)</option>
-              </select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+              <div class="fgroup">
+                <label>Estrategia de Distribución en Horas de Trabajo</label>
+                <select id="ot-spacing" onchange="loadAndBuild()">
+                  <option value="first_weeks" selected>⚡ Completar en Primeras Semanas (Semana 1 y 2 en sus horas de trabajo)</option>
+                  <option value="even">⚖️ Equitativo por Semanas (Carga decreciente)</option>
+                  <option value="consecutive">📦 Consecutivo (Llenar día a día)</option>
+                </select>
+              </div>
+              <div class="fgroup">
+                <label>Subsanación de Actividades Pendientes</label>
+                <select id="ot-remedy" onchange="loadAndBuild()">
+                  <option value="active" selected>🔄 Subsanación Dinámica: Mover pendientes no completadas a siguientes turnos</option>
+                  <option value="off">📅 Mantener estático en fecha original</option>
+                </select>
+              </div>
             </div>
-            <div id="ot-col-info" class="col-info" style="display:none"></div>
-            <div id="ot-log" class="process-log" style="display:none"></div>
-            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-              <button class="btn btn-primary" id="btn-upload-ots" onclick="uploadOTs()" disabled>
-                ⚡ Procesar y Subir OTs
-              </button>
-              <button class="btn btn-danger btn-sm" onclick="clearOTsDB()">🗑 Limpiar OTs en DB</button>
-              <button class="btn btn-secondary btn-sm" onclick="loadAndBuild()">🔄 Recargar distribución</button>
             </div>
-          </div>
         </div>
         <div class="card" style="grid-column: 1 / -1;">
           <div class="card-head"><span>📅</span>
@@ -2057,6 +2058,11 @@
     <div class="panel" id="p4">
       <div class="stitle">✅ Registro de <em>Cumplimiento</em></div>
       <div class="ssub">Marca las actividades completadas · Se guarda en Google Sheets</div>
+            <!-- SEMANA ACTUAL -->
+      <div id="week-summary-card" class="gcomp-card" style="margin-bottom:16px;display:none">
+        <h3 id="week-summary-title">📅 Semana Actual</h3>
+        <div id="week-summary-rows"></div>
+      </div>
       <div class="gcomp-card">
         <h3>📊 Resumen General</h3>
         <div id="gcomp-rows">
@@ -2071,6 +2077,7 @@
         <label>Fecha:</label>
         <input type="date" id="cf-date" onchange="renderCompliancePanel()">
         <button class="btn btn-secondary btn-sm" onclick="saveComplianceToDB()">💾 Guardar en Sheets</button>
+        <button class="btn btn-warn btn-sm" onclick="completeAllToday()">⚡ Marcar todo hoy</button>
       </div>
       <div class="ugrid" id="comp-grid">
         <div class="nodata"><span class="nd-icon">✅</span>
@@ -3777,15 +3784,41 @@
     }
 
     async function uploadSchedules() {
-      if (!_processedSchedules || !_processedSchedules.length) { alert('Primero carga un archivo Excel'); return; }
+      if (!_processedSchedules || !_processedSchedules.length) { alert('Primero carga un archivo Excel de Horarios'); return; }
       if (!adminUnlocked) { openAdmin(); return; }
       const btn = document.getElementById('btn-upload-sch');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Subiendo...';
+      btn.innerHTML = '<span class="spinner"></span> Sincronizando usuarios y horarios...';
+
+      // 1. IDENTIFICAR Y GUARDAR USUARIOS NUEVOS O MODIFICADOS EN LA HOJA DE CÁLCULO
+      const uniqueUsersInSch = new Map();
+      _processedSchedules.forEach(item => {
+        const c = normCode(item.codigo);
+        if (!uniqueUsersInSch.has(c)) {
+          const uInfo = DB.users.find(u => normCode(u.codigo) === c);
+          uniqueUsersInSch.set(c, {
+            codigo: item.codigo,
+            nombre: uInfo?.nombre || item.nombre_original || item.codigo,
+            color: uInfo?.color || COLORS[uniqueUsersInSch.size % COLORS.length]
+          });
+        }
+      });
+
+      schLog('info', `👤 Sincronizando ${uniqueUsersInSch.size} usuario(s) en la base de datos...`);
+      let usersSaved = 0;
+      for (const [code, u] of uniqueUsersInSch.entries()) {
+        try {
+          const res = await apiPost({ action: 'saveUser', codigo: u.codigo, nombre: u.nombre, color: u.color, activo: '1' });
+          if (res && res.ok) usersSaved++;
+        } catch (e) {
+          console.warn('Error guardando usuario:', code, e);
+        }
+      }
+      schLog('ok', `✓ ${usersSaved} usuario(s) identificados y asegurados en la tabla Usuarios.`);
 
       const overwrite = document.getElementById('sch-overwrite')?.value !== 'skip';
 
-      // Filtrar turnos si el usuario seleccionó omitir existentes
+      // 2. Filtrar turnos si el usuario seleccionó omitir existentes
       let toUpload = _processedSchedules;
       if (!overwrite) {
         const existingSet = new Set(DB.schedules.map(s => `${normCode(s.codigo)}||${s.fecha}||${s.horario}`));
@@ -3797,19 +3830,32 @@
         btn.disabled = false;
         btn.textContent = '⚡ Subir Horarios a la Base';
         schLog('ok', '✓ Todos los turnos ya existen en la base de datos.');
+        showToast('✓ Usuarios y turnos al día', 'ok');
         return;
       }
 
+      // 3. Subir turnos de horario con soporte por lote (batch) ultra-rápido y fallback seguro
       let uploaded = 0, errCount = 0;
-      const CONCURRENT = 10;
-      const BATCH = 30;
+      const BATCH = 50;
 
       for (let i = 0; i < toUpload.length; i += BATCH) {
         const chunk = toUpload.slice(i, i + BATCH);
-        for (let j = 0; j < chunk.length; j += CONCURRENT) {
-          const parallel = chunk.slice(j, j + CONCURRENT);
-          const results = await Promise.allSettled(
-            parallel.map(item => apiPost({
+        let batchOk = false;
+        try {
+          // Intentar guardado por lote (soporte nativo en GoogleAppsScript.gs)
+          const res = await apiPost({ action: 'saveSchedule', schedules: chunk });
+          if (res && res.ok) {
+            uploaded += chunk.length;
+            batchOk = true;
+          }
+        } catch (e) {
+          batchOk = false;
+        }
+
+        // Fallback elemento a elemento si el script no soporta batch
+        if (!batchOk) {
+          const parallelResults = await Promise.allSettled(
+            chunk.map(item => apiPost({
               action: 'saveSchedule',
               codigo: item.codigo,
               fecha: item.fecha,
@@ -3818,18 +3864,20 @@
               turno_nombre: item.turno_nombre
             }))
           );
-          results.forEach(r => {
+          parallelResults.forEach(r => {
             if (r.status === 'fulfilled' && r.value?.ok) uploaded++;
             else errCount++;
           });
         }
+
         const pct = Math.round((Math.min(i + BATCH, toUpload.length) / toUpload.length) * 100);
-        schLog('info', `⏳ Subiendo turnos: ${uploaded}/${toUpload.length} (${pct}%)…`);
+        schLog('info', `⏳ Guardando turnos: ${uploaded}/${toUpload.length} (${pct}%)…`);
       }
 
       btn.disabled = false;
       btn.textContent = '⚡ Subir Horarios a la Base';
       schLog(errCount > 0 ? 'warn' : 'ok', `${errCount > 0 ? '⚠' : '✅'} Completado: ${uploaded} turnos sincronizados en la base${errCount > 0 ? ` · ${errCount} errores` : ''}`);
+      showToast(`✅ Horarios y técnicos guardados correctamente`, 'ok');
       await refreshAll();
     }
 
@@ -3926,13 +3974,65 @@
         const entries = (schByCode[code] || []).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
         let remaining = [...(otByCode[code] || [])];
 
-        const spacingEl = document.getElementById('ot-spacing');
-        const distributeEvenly = spacingEl && spacingEl.value === 'even';
+const spacingEl = document.getElementById('ot-spacing');
+        const spacingMode = spacingEl ? spacingEl.value : 'first_weeks';
+        const remedyEl = document.getElementById('ot-remedy');
+        const enableRemedy = !remedyEl || remedyEl.value === 'active';
+        const todayDk = dkStr(new Date());
+
+        const workEntries = entries.filter(e => !e.rest);
+        let weekLimits = {};
+
+        // Modo 'even': Curva decreciente por semanas
+        if (spacingMode === 'even' && workEntries.length > 0) {
+          const weekMap = {};
+          workEntries.forEach(e => {
+            const d = e.date || parseDate(e.dateKey);
+            if (!d) return;
+            const day = d.getDay();
+            const diffToMon = (day === 0) ? -6 : 1 - day;
+            const mon = new Date(d); mon.setDate(d.getDate() + diffToMon);
+            const wk = dkStr(mon);
+            if (!weekMap[wk]) weekMap[wk] = [];
+            weekMap[wk].push(e.dateKey);
+          });
+          const weekKeys = Object.keys(weekMap).sort();
+          const totalTasks = remaining.length;
+          const numWeeks = weekKeys.length;
+          let taskPerWeek = {};
+          if (numWeeks === 1) {
+            taskPerWeek[weekKeys[0]] = totalTasks;
+          } else {
+            let assigned = 0;
+            weekKeys.forEach((wk, wi) => {
+              const weight = Math.max(0.15, 1 - (wi * 0.28));
+              const tasks = wi < numWeeks - 1
+                ? Math.round(totalTasks * weight / numWeeks * 1.6)
+                : Math.max(0, totalTasks - assigned);
+              taskPerWeek[wk] = Math.min(tasks, totalTasks - assigned);
+              assigned += taskPerWeek[wk];
+            });
+          }
+          workEntries.forEach(e => {
+            const d = e.date || parseDate(e.dateKey);
+            if (!d) { weekLimits[e.dateKey] = 2; return; }
+            const day = d.getDay();
+            const diffToMon = (day === 0) ? -6 : 1 - day;
+            const mon = new Date(d); mon.setDate(d.getDate() + diffToMon);
+            const wk = dkStr(mon);
+            const daysInWeek = weekMap[wk] ? weekMap[wk].length : 1;
+            weekLimits[e.dateKey] = Math.max(1, Math.ceil((taskPerWeek[wk] || 1) / daysInWeek));
+          });
+        }
+
+        // Cola acumulativa para subsanación de tareas pendientes de días anteriores
+        let pendingRemedyTasks = [];
 
         entries.forEach((entry, index) => {
           const uInfo = DB.users.find(u => normCode(u.codigo) === normCode(code));
           const date = entry.date;
           const dkey = entry.dateKey;
+          const isPastDate = dkey < todayDk;
           const common = { code, color, uName: uInfo?.nombre || code, date, dkey, day: DAYS_ES[date.getDay()], isAuto: !!entry.isAuto };
 
           if (entry.rest) {
@@ -3943,14 +4043,45 @@
             return;
           }
 
-          let currentLimit = Infinity;
-          if (distributeEvenly && !entry.rest) {
-             const remainingDays = entries.slice(index).filter(e => !e.rest).length;
-             currentLimit = remainingDays > 0 ? Math.ceil(remaining.length / remainingDays) : remaining.length;
+          // Inyectar tareas que vienen de subsanación de días previos al inicio del día de hoy o futuro
+          if (!isPastDate && pendingRemedyTasks.length > 0) {
+            remaining = [...pendingRemedyTasks, ...remaining];
+            pendingRemedyTasks = [];
           }
+
+          let currentLimit = Infinity;
+          if (spacingMode === 'even' && !entry.rest) {
+            currentLimit = weekLimits[dkey] !== undefined ? weekLimits[dkey] : Math.ceil(remaining.length / Math.max(1, entries.slice(index).filter(e => !e.rest).length));
+          } else if (spacingMode === 'first_weeks') {
+            // first_weeks: llenar las horas de trabajo del turno disponible al 100% día tras día en las primeras semanas
+            currentLimit = Infinity;
+          }
+
           const result = assignTasks(entry.start, entry.end, remaining, currentLimit);
           remaining = result.leftover;
-          const dayTasksAll = result.scheduled.filter(s => s.type === 'task');
+          let dayTasksAll = result.scheduled.filter(s => s.type === 'task');
+
+          // SUBSANACIÓN DINÁMICA: Si esta fecha ya pasó, verificar cuáles quedaron sin completar
+          if (enableRemedy && isPastDate) {
+            const uncompletedInPast = [];
+            const completedInPast = [];
+            dayTasksAll.forEach((t, tIdx) => {
+              const ckey = compKey(code, dkey, tIdx);
+              if (COMP[ckey]) {
+                completedInPast.push(t);
+              } else {
+                uncompletedInPast.push({ ...t, isRemedied: true, remedyFromDate: dkey });
+              }
+            });
+
+            if (uncompletedInPast.length > 0) {
+              // Acumular las tareas no hechas para subsanarlas en el siguiente turno de trabajo disponible
+              pendingRemedyTasks.push(...uncompletedInPast);
+              // En el día pasado solo quedan registradas las que sí se completaron
+              result.scheduled = result.scheduled.filter(s => s.type !== 'task' || completedInPast.includes(s));
+              dayTasksAll = completedInPast;
+            }
+          }
 
           allGroups.push({
             ...common, slotStart: entry.start, slotEnd: entry.end,
@@ -3959,6 +4090,12 @@
             taskCount: dayTasksAll.length, otItems: dayTasksAll,
           });
         });
+
+        // Si quedaron tareas por subsanar sin día futuro asignado, agregarlas al remanente
+        if (pendingRemedyTasks.length > 0) {
+          remaining = [...pendingRemedyTasks, ...remaining];
+        }
+      
 
         // Si quedaron tareas pendientes (sin horario disponible para ese técnico)
         if (remaining.length > 0) {
@@ -3996,6 +4133,7 @@
       populateComplianceFilters();
       populatePrintUsers();
       populateFilters();
+      renderWeekSummary();
     }
     // ─── SCHEDULING ENGINE ────────────────────────────────
     // Construye los bloques libres del turno descontando solo el break de alimentación principal
@@ -4260,7 +4398,7 @@
         if (cur) sel.value = cur;
       });
     }
-    function populateComplianceFilters() { populateFilters(); refreshGlobalSummary(); }
+    function populateComplianceFilters() { populateFilters(); refreshGlobalSummary(); renderWeekSummary(); }
     function populatePrintUsers() {
       if (!ST.result) return;
       const codes = [...new Set(ST.result.filter(g => !g.isRest).map(g => g.code))].sort();
@@ -4499,6 +4637,7 @@
         refreshCompBar(g.code, g.dkey);
       });
       refreshGlobalSummary();
+      renderWeekSummary();
     }
     // ─── PRINT ───────────────────────────────────────────
     function renderPrintPreview() {
@@ -4712,6 +4851,136 @@ tr.row-done td{color:#94a3b8;}
       XLSX.utils.book_append_sheet(wb, ws, "Distribución");
       XLSX.writeFile(wb, `WorkScheduler_Export_${new Date().toISOString().slice(0, 10)}.xlsx`);
     }
+  
+    // ═══════════════════════════════════════════════════════
+    // TOAST NOTIFICATION SYSTEM
+    // ═══════════════════════════════════════════════════════
+    (function initToast() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+      document.body.appendChild(container);
+    })();
+    function showToast(msg, type, dur) {
+      type = type || 'ok'; dur = dur || 3000;
+      const colors = { ok:'#00e5b8', err:'#ff5263', warn:'#ffb830', info:'#4db8ff' };
+      const c = document.getElementById('toast-container');
+      if (!c) return;
+      const t = document.createElement('div');
+      t.style.cssText = `background:var(--surface2);border:1px solid ${colors[type]||colors.ok};color:var(--text);padding:10px 16px;border-radius:10px;font-size:12px;font-family:var(--font-mono);box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:auto;max-width:340px;display:flex;align-items:center;gap:8px;animation:fadeUp .25s ease both;`;
+      t.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${colors[type]||colors.ok};flex-shrink:0"></span>${msg}`;
+      c.appendChild(t);
+      setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, dur);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // SEMANA ACTUAL — calcula lun-dom de la semana en curso
+    // ═══════════════════════════════════════════════════════
+    function getWeekRange(date) {
+      const d = date || new Date();
+      const day = d.getDay(); // 0=dom
+      const diffToMon = (day === 0) ? -6 : 1 - day;
+      const mon = new Date(d); mon.setDate(d.getDate() + diffToMon); mon.setHours(0,0,0,0);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      return { mon, sun };
+    }
+
+    function renderWeekSummary() {
+      const card = document.getElementById('week-summary-card');
+      const rowsEl = document.getElementById('week-summary-rows');
+      const titleEl = document.getElementById('week-summary-title');
+      if (!card || !rowsEl || !ST.result) return;
+
+      const { mon, sun } = getWeekRange();
+      const monDk = dkStr(mon);
+      const sunDk = dkStr(sun);
+
+      // Filtrar grupos de la semana actual
+      const weekGroups = ST.result.filter(g =>
+        !g.isRest && g.dkey >= monDk && g.dkey <= sunDk &&
+        (g.scheduled||[]).some(s => s.type === 'task')
+      );
+
+      if (!weekGroups.length) {
+        card.style.display = 'none';
+        return;
+      }
+
+      const fmtShort = d => d.toLocaleDateString('es-PE', { day:'2-digit', month:'short' });
+      const titleStr = `📅 Semana Actual: ${fmtShort(mon)} — ${fmtShort(sun)}`;
+      titleEl.textContent = titleStr;
+      card.style.display = 'block';
+
+      // Agrupar por técnico
+      const byCode = {};
+      weekGroups.forEach(g => {
+        if (!byCode[g.code]) byCode[g.code] = { code: g.code, color: g.color, uName: g.uName, total: 0, done: 0, byDay: {} };
+        const tasks = (g.scheduled||[]).filter(s => s.type === 'task');
+        tasks.forEach((_, i) => {
+          byCode[g.code].total++;
+          if (COMP[compKey(g.code, g.dkey, i)]) byCode[g.code].done++;
+        });
+        byCode[g.code].byDay[g.dkey] = { total: tasks.length, done: tasks.filter((_,i) => COMP[compKey(g.code, g.dkey, i)]).length };
+      });
+
+      rowsEl.innerHTML = Object.values(byCode).map(u => {
+        const pct = u.total ? Math.round((u.done/u.total)*100) : 0;
+        const barColor = pct >= 80 ? 'var(--green)' : pct >= 40 ? 'var(--accent3)' : 'var(--accent2)';
+        const todayDk = dkStr(new Date());
+        const todayData = u.byDay[todayDk];
+        const todayStr = todayData ? `<span style="font-size:9px;color:var(--accent1);margin-left:6px">📍 Hoy: ${todayData.done}/${todayData.total}</span>` : '';
+        return `<div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px;">
+            <span style="font-weight:700;color:var(--text)">${u.code} <span style="font-weight:400;color:var(--muted)">${u.uName||''}</span>${todayStr}</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="color:${barColor};font-weight:700;">${u.done}/${u.total} · ${pct}%</span>
+              <button class="btn btn-xs btn-secondary" onclick="completeToday('${u.code}')">⚡ Completar hoy</button>
+            </div>
+          </div>
+          <div style="height:7px;background:var(--border);border-radius:4px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px;transition:width .6s ease;"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Completa todas las tareas del día de hoy para un técnico dado
+    function completeToday(code) {
+      if (!ST.result) return;
+      const todayDk = dkStr(new Date());
+      const groups = ST.result.filter(g => g.code === code && g.dkey === todayDk && !g.isRest);
+      let marked = 0;
+      groups.forEach(g => {
+        const tasks = (g.scheduled||[]).filter(s => s.type === 'task');
+        tasks.forEach((_, i) => {
+          const key = compKey(code, todayDk, i);
+          if (!COMP[key]) { COMP[key] = true; marked++; }
+        });
+      });
+      if (marked === 0) { showToast('Ya estaban completas las tareas de hoy ✓', 'ok'); return; }
+      // Actualizar UI
+      document.querySelectorAll(`[data-user="${code}"][data-dkey="${todayDk}"] .check-box`).forEach(b => b.classList.add('done'));
+      document.querySelectorAll(`[data-user="${code}"][data-dkey="${todayDk}"] .check-label`).forEach(l => { l.textContent = '✓ Completado'; l.classList.add('done'); });
+      document.querySelectorAll(`[data-user="${code}"][data-dkey="${todayDk}"] .sched-item`).forEach(si => si.classList.add('is-done'));
+      refreshCompBar(code, todayDk);
+      refreshGlobalSummary();
+      renderWeekSummary();
+      saveComplianceToDB(true);
+      showToast(`✓ ${marked} tarea(s) de hoy marcadas para ${code}`, 'ok');
+    }
+
+    // Completa todas las tareas de HOY para TODOS (botón principal del panel)
+    function completeAllToday() {
+      if (!ST.result) { showToast('Sin datos cargados', 'warn'); return; }
+      const todayDk = dkStr(new Date());
+      const codeFilter = document.getElementById('cf-user')?.value || '';
+      const codes = codeFilter
+        ? [codeFilter]
+        : [...new Set(ST.result.filter(g => g.dkey === todayDk && !g.isRest).map(g => g.code))];
+      if (!codes.length) { showToast('No hay actividades para hoy', 'info'); return; }
+      codes.forEach(c => completeToday(c));
+    }
+
   </script>
 </body>
 
