@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -1833,7 +1833,7 @@
               <b style="color:var(--accent1)">Compatibilidad total:</b> Archivos detallados ERP o listas simples (N° y Actividad).
             </p>
             <div class="upload-area" id="ot-dropzone">
-              <input type="file" id="ot-file" accept=".xlsx,.xls" onchange="handleOTFile(event)">
+              <input type="file" id="ot-file" accept=".xlsx,.xls,.csv,.txt" onchange="handleOTFile(event)">
               <span class="upload-icon">📋</span>
               <div class="upload-title">Excel de OTs / Actividades</div>
               <div class="upload-sub">Arrastra o haz clic · <code>.xlsx</code> · <code>.xls</code></div>
@@ -1905,7 +1905,7 @@
               </div>
             </div>
             <div class="upload-area" id="sch-dropzone">
-              <input type="file" id="sch-file" accept=".xlsx,.xls,.html" onchange="handleScheduleFile(event)">
+              <input type="file" id="sch-file" accept=".xlsx,.xls,.html,.csv,.txt" onchange="handleScheduleFile(event)">
               <span class="upload-icon">📅</span>
               <div class="upload-title">Excel de Horarios</div>
               <div class="upload-sub">Arrastra o haz clic · <code>.xls</code> · <code>.xlsx</code></div>
@@ -2409,7 +2409,20 @@
         return bestUser.codigo;
       }
 
-      // 4. Si es un nuevo usuario sin código en DB, generamos código estilo HIM.XAPELLIDO
+            // 4. Si el texto ya tiene formato de código HIM (ej: HIM.MCASTRO, HIM.BCRUZ, HIM.JCACHI), usarlo directamente
+      if (/^HIM[\.\-_][A-Z0-9]+$/i.test(rawUpper)) {
+        if (!DB.users.some(u => normCode(u.codigo) === normCode(rawUpper))) {
+          DB.users.push({
+            codigo: rawUpper,
+            nombre: raw,
+            color: COLORS[DB.users.length % COLORS.length],
+            activo: '1'
+          });
+        }
+        return rawUpper;
+      }
+
+      // 5. Si es un nuevo usuario sin código en DB, generamos código estilo HIM.XAPELLIDO
       const tokens = cleanTokens(raw);
       if (tokens.length > 0) {
         const first = tokens[0][0].toUpperCase();
@@ -3291,7 +3304,29 @@
       const colInfo = [];
 
       // 1. Detectar tipo de archivo y mapeo inteligente de columnas
-      const isEnterpriseERP = numCols >= 25;
+            const isEnterpriseERP = numCols >= 25;
+      
+      // Mapeo específico para exportación de ERP SAMM / GHL Hoteles (214 columnas)
+      let erpColUser = -1;
+      let erpColUserName = -1;
+      let erpColPrefix = -1;
+      let erpColNum = -1;
+      let erpColMotivo = -1;
+      let erpColEquipo = -1;
+      let erpColUbicacion = -1;
+      let erpColContrato = -1;
+
+      firstRow.forEach((colName, cIdx) => {
+        const h = String(colName || '').trim().toLowerCase();
+        if (/^usuario\s*asignado/i.test(h)) erpColUser = cIdx;
+        else if (/doc_documento_ot_seg_usuario_asignado_nombre/i.test(h)) erpColUserName = cIdx;
+        else if (/^prefijo$/i.test(h)) erpColPrefix = cIdx;
+        else if (/^num$/i.test(h)) erpColNum = cIdx;
+        else if (/motivo\s*servicio/i.test(h)) erpColMotivo = cIdx;
+        else if (/equ_equipo_equipo/i.test(h)) erpColEquipo = cIdx;
+        else if (/^ubicacion$/i.test(h) || /^ubicaci[oó]n$/i.test(h)) erpColUbicacion = cIdx;
+        else if (/^contrato$/i.test(h)) erpColContrato = cIdx;
+      });
       let colIdxUsuario = -1;
       let colIdxOT = -1;
       let colIdxActividad = -1;
