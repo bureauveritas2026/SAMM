@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -2424,6 +2424,16 @@
         "IVAN LIZA": "HIM.ILIZA"
       };
       const cleanUpperNoAccents = rawUpper.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      // DetecciÃ³n directa por apellidos de la operaciÃ³n HIM Holiday Inn
+      if (/BENAVIDES/i.test(cleanUpperNoAccents)) return "HIM.FBENAVIDES";
+      if (/CASTRO/i.test(cleanUpperNoAccents)) return "HIM.MCASTRO";
+      if (/GAMARRA/i.test(cleanUpperNoAccents)) return "HIM.VGAMARRA";
+      if (/REYES/i.test(cleanUpperNoAccents)) return "HIM.JREYES";
+      if (/MAMANI/i.test(cleanUpperNoAccents)) return "HIM.YMAMANI";
+      if (/LIZA/i.test(cleanUpperNoAccents)) return "HIM.ILIZA";
+      if (/CACHI/i.test(cleanUpperNoAccents)) return "HIM.JCACHI";
+      if (/(DE LA CRUZ|BCRUZ|BENGY)/i.test(cleanUpperNoAccents)) return "HIM.BCRUZ";
+
       if (KNOWN_HIM[cleanUpperNoAccents]) {
         const mappedCode = KNOWN_HIM[cleanUpperNoAccents];
         if (!DB.users.some(u => normCode(u.codigo) === normCode(mappedCode))) {
@@ -4272,7 +4282,8 @@ const spacingEl = document.getElementById('ot-spacing');
           let dayTasksAll = result.scheduled.filter(s => s.type === 'task');
 
           // SUBSANACIÓN DINÁMICA: Si esta fecha ya pasó, verificar cuáles quedaron sin completar
-          if (enableRemedy && isPastDate) {
+                    const hasUserCompliance = Object.keys(COMP).some(k => k.startsWith(code + '||'));
+          if (enableRemedy && isPastDate && hasUserCompliance) {
             const uncompletedInPast = [];
             const completedInPast = [];
             dayTasksAll.forEach((t, tIdx) => {
@@ -4444,7 +4455,11 @@ const spacingEl = document.getElementById('ot-spacing');
     }
 
     // ─── HELPERS ─────────────────────────────────────────
-    function normCode(v) { return String(v || '').trim().toUpperCase(); }
+    function normCode(v) {
+      let s = String(v || '').trim().toUpperCase();
+      s = s.replace(/^HIM[\.\-_]/, '');
+      return s;
+    }
     function parseDate(v) {
       if (!v) return null;
       if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
@@ -4472,14 +4487,23 @@ const spacingEl = document.getElementById('ot-spacing');
     }
     function parseSchedule(str) {
       if (!str) return null;
-      if (/^(DESCANSO|DESC|REST|LIBRE|OFF)/i.test(String(str).trim())) return { rest: true };
-      const s = String(str).replace(/[–—−]/g, '-').replace(/\s/g, '');
-      const m = s.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);
-      if (!m) return null;
-      let start = +m[1] * 60 + +m[2]; let end = +m[3] * 60 + +m[4];
-      const overnight = end <= start;
-      if (overnight) end += 1440;
-      return { start, end, total: end - start, overnight };
+      const clean = String(str).trim();
+      if (/descanso|dcs|dfd|phx|ftd|pft|pdc|dms|vcs|libre|day\s*off|off/i.test(clean)) {
+        return { rest: true };
+      }
+      const m = clean.match(/(\d{1,2}):(\d{2})\s*[\-â€“â€”âˆ’Â·~toal]+\s*(\d{1,2}):(\d{2})/i);
+      if (m) {
+        let start = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+        let end = parseInt(m[3], 10) * 60 + parseInt(m[4], 10);
+        const overnight = end <= start;
+        if (overnight) end += 1440;
+        return { start, end, total: end - start, overnight };
+      }
+      if (/\bM01\b/i.test(clean)) return { start: 7 * 60, end: 16 * 60, total: 9 * 60, overnight: false };
+      if (/\bM02\b/i.test(clean)) return { start: 13 * 60, end: 22 * 60, total: 9 * 60, overnight: false };
+      if (/\bM03\b/i.test(clean)) return { start: 22 * 60, end: 31 * 60, total: 9 * 60, overnight: true };
+      if (/\bM04\b/i.test(clean)) return { start: 9 * 60, end: 18 * 60, total: 9 * 60, overnight: false };
+      return null;
     }
     function hhmm(min) {
       const t = ((min % 1440) + 1440) % 1440;
